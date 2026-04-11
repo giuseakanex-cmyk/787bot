@@ -24,7 +24,6 @@ const fancyClock = (ms) => {
 
 const handler = async (m, { conn }) => {
     try {
-        // Reazione di caricamento
         await conn.sendMessage(m.chat, { react: { text: '⚙️', key: m.key } });
         
         const old = performance.now();
@@ -44,34 +43,30 @@ const handler = async (m, { conn }) => {
         const neww = performance.now();
         const speed = (neww - old).toFixed(4);
 
-        // Estetica Legam OS
         const text = `
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦
-·  𝐋 𝐄 𝐆 𝐀 𝐌  𝐂 𝐎 𝐑 𝐄  ·
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦
+⌬ ━━━──  𝟕 𝟖 𝟕  𝐒 𝐘 𝐒 𝐓 𝐄 𝐌  ──━━━ ⌬
 
-『 📡 』 𝐒 𝐓 𝐀 𝐓 𝐎  𝐑 𝐄 𝐓 𝐄
-· 𝐏𝐢𝐧𝐠 ➻ ${speed} ms
-· 𝐔𝐩𝐭𝐢𝐦𝐞 𝐁𝐨𝐭 ➻ ${uptime}
-· 𝐔𝐩𝐭𝐢𝐦𝐞 𝐇𝐨𝐬𝐭 ➻ ${osUptime}
+█ 📡 **NETWORK STATUS**
+↳ Ping: ${speed} ms
+↳ Bot Uptime: ${uptime}
+↳ Host Uptime: ${osUptime}
 
-『 💾 』 𝐌 𝐄 𝐌 𝐎 𝐑 𝐈 𝐀
-· 𝐑𝐀𝐌 𝐓𝐨𝐭𝐚𝐥𝐞 ➻ ${formatBytes(totalMem)}
-· 𝐑𝐀𝐌 𝐔𝐬𝐚𝐭𝐚 ➻ ${formatBytes(usedMem)}
-· 𝐑𝐀𝐌 𝐁𝐨𝐭 ➻ ${formatBytes(nodeMem)}
+█ 💾 **MEMORY STORAGE**
+↳ RAM Totale: ${formatBytes(totalMem)}
+↳ RAM Usata: ${formatBytes(usedMem)}
+↳ RAM Bot: ${formatBytes(nodeMem)}
 
-『 💻 』 𝐒 𝐈 𝐒 𝐓 𝐄 𝐌 𝐀
-· 𝐂𝐏𝐔 ➻ ${cpuModel}
-· 𝐂𝐨𝐫𝐞𝐬 ➻ ${cpuCores} Threads
-· 𝐎𝐒 ➻ ${platform} (${arch})
-· 𝐇𝐨𝐬𝐭 ➻ ${hostname}
+█ 💻 **HARDWARE INFO**
+↳ CPU: ${cpuModel}
+↳ Threads: ${cpuCores}
+↳ OS: ${platform} (${arch})
+↳ Host: ${hostname}
 
-👑 𝐎𝐖𝐍𝐄𝐑
-➤ 𝐆𝐈𝐔𝐒𝚵
+█ 👑 **AUTHORITY**
+↳ Root: GIUSE
 
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`.trim();
+⌬ ━━━──  𝐒𝐘𝐒𝐓𝐄𝐌 𝐎𝐕𝐄𝐑𝐑𝐈𝐃𝐄  ──━━━ ⌬`.trim();
 
-        // Invio con Fake Channel (Anti-Ban e Grafica Premium)
         await conn.sendMessage(m.chat, {
             text: text,
             contextInfo: {
@@ -79,18 +74,17 @@ const handler = async (m, { conn }) => {
                 isForwarded: true,
                 forwardedNewsletterMessageInfo: {
                     newsletterJid: '120363259442839354@newsletter',
-                    newsletterName: "✨.✦★彡 𝐋𝐞𝐠𝐚𝐦 𝐎𝐒 𝐒𝐲𝐬𝐭𝐞𝐦 Ξ★✦.•",
+                    newsletterName: "𝟕𝟖𝟕 𝐒𝐘𝐒𝐓𝐄𝐌: 𝐂𝐎𝐑𝐄 𝐈𝐍𝐅𝐎",
                     serverMessageId: 100
                 }
             }
         }, { quoted: m });
 
-        // Reazione finale di successo
         await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
 
     } catch (e) {
         console.error(e);
-        m.reply("❌ `Errore nella lettura del sistema Core.`");
+        m.reply("⌬ ❯ `SYSTEM_ERROR: ACCESS_DENIED_TO_CORE` ");
     }
 }
 
@@ -99,4 +93,3 @@ handler.tags = ['info']
 handler.command = /^(speed|info|system)$/i
 
 export default handler
-
