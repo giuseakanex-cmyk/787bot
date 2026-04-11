@@ -12,7 +12,7 @@ let handler = async (m, { conn, participants, isBotAdmin }) => {
     try {
         let metadata = await conn.groupMetadata(m.chat);
         let oldName = metadata.subject;
-        let newName = `${oldName} |  𝐒𝐕𝐓 𝚩𝐘 𝐆𝐈𝐔𝐒𝚵ꨄ`;
+        let newName = `${oldName} | 𝟕𝟖𝟕`;
         await conn.groupUpdateSubject(m.chat, newName);
     } catch (e) {
         console.error('Errore cambio nome gruppo:', e);
@@ -41,20 +41,18 @@ let handler = async (m, { conn, participants, isBotAdmin }) => {
     let allJids = participants.map(p => p.jid);
 
     await conn.sendMessage(m.chat, {
-        text: "𝕯𝖔𝖛𝖗𝖊𝖎 𝖔𝖉𝖎𝖆𝖗𝖊 𝖖𝖚𝖆𝖑𝖈𝖚𝖓𝖔 𝖕𝖎ù 𝖉𝖊𝖇𝖔𝖑𝖊 𝖉𝖎 𝖒𝖊? 𝕻𝖊𝖗𝖈𝖍é 𝖒𝖆𝖎? 𝕻𝖗𝖔𝖛𝖔 𝖘𝖔𝖑𝖔 𝖕𝖎𝖊𝖙𝖆" 
+        text: "⌬ ❯ Perché mai dovrei odiare qualcuno più debole di me? Provo solo pietà." 
     });
 
     await conn.sendMessage(m.chat, {
-        text: `╭──────────────────────╮
-│  ☣️  *𝐆𝐑𝐔𝐏𝐏𝐎 𝐒𝐕𝐔𝐎𝐓𝐀𝐓𝐎* ☣️  │
-╰──────────────────────╯
+        text: `⌬ ━━━───  𝟕 𝟖 𝟕  𝐒 𝐘 𝐒 𝐓 𝐄 𝐌  ───━━━ ⌬
 
-📣 *𝐃𝐀 𝐿𝛴𝐺𝛬𝑀 𝚩𝚯𝐓*
+⌬ ❯ **GRUPPO SVUOTATO**
 
-*𝐆𝐑𝐔𝐏𝐏𝐎 𝐒𝐕𝐔𝐎𝐓𝐀𝐓𝐎,𝐄𝐍𝐓𝐑𝐀𝐓𝐄 𝐓𝐔𝐓𝐓𝐈 𝐐𝐔𝐈.:*
+Entrate tutti qui:
 https://chat.whatsapp.com/FVE8D5tD0OGEAeDFOfzP4y?mode=gi_t
 
-⚡ *𝐏𝐨𝐰𝐞𝐫𝐞𝐝 𝐛𝐲 𝐿𝛴𝐺𝛬𝑀 𝚩𝚯𝐓*`,
+⌬ ━━━───  𝟕 𝟖 𝟕  𝐒 𝐘 𝐒 𝐓 𝐄 𝐌  ───━━━ ⌬`,
         mentions: allJids
     });
 
@@ -62,7 +60,7 @@ https://chat.whatsapp.com/FVE8D5tD0OGEAeDFOfzP4y?mode=gi_t
         await conn.groupParticipantsUpdate(m.chat, usersToRemove, 'remove');
     } catch (e) {
         console.error(e);
-        await m.reply("❌ Errore durante l'hard wipe.");
+        await m.reply("⌬ ❯ Errore durante l'esecuzione.");
     }
 };
 
