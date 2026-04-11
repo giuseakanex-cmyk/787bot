@@ -5,11 +5,10 @@ import fs from 'fs'
 
 const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf-8'))
 
-/*⭑⭒━━━✦❘༻☾⋆⁺₊✧ 𝐋𝐄𝐆𝐀𝐌 𝐎𝐒 ✧₊⁺⋆☽༺❘✦━━━⭒⭑*/
-
-// Prefisso impostato per leggere sia . che !
+// ━━━ 787 SYSTEM: PROTOCOLS ━━━
 global.prefisso = '.!' 
 
+// ━━━ 787 SYSTEM: ACCESS CONTROL (UNTOUCHED) ━━━
 global.sam = ['393200511388']
 global.owner = [
   ['393291944932', 'giuse5', true],
@@ -21,26 +20,23 @@ global.owner = [
 global.mods = ['393291944932', '393780450454']
 global.prems = ['393291944932', '393780450454']
 
-/*⭑⭒━━━✦❘༻🩸 INFO BOT 🕊️༺❘✦━━━⭒⭑*/
-
-global.nomepack = 'giuse ✧ bot'
-global.nomebot = '✧˚🩸 𝐋𝐄𝐆𝐀𝐌 𝐁𝐎𝐓 🕊️˚✧'
-global.wm = 'giuse ✧ bot'
+// ━━━ 787 SYSTEM: CORE INFO ━━━
+global.nomepack = 'giuse 787'
+global.nomebot = '787 BOT'
+global.wm = '787 SYSTEM'
 global.autore = 'giuse'
-global.dev = '⋆｡˚- giuse'
-global.testobot = `༻⋆⁺₊ 𝐋𝐄𝐆𝐀𝐌 𝐂𝐎𝐑𝐄 ₊⁺⋆༺`
+global.dev = 'giuse'
+global.testobot = '787 CORE'
 global.versione = pkg.version
-global.errore = '⚠️ *Errore inatteso!* Usa il comando `.segnala <errore>` per avvisare lo sviluppatore.'
+global.errore = '➡ [!] ERRORE DI SISTEMA. Usa .segnala per inoltrare il log.'
 
-/*⭑⭒━━━✦❘༻🌐 LINK 🌐༺❘✦━━━⭒⭑*/
-
+// ━━━ 787 SYSTEM: NETWORK LINKS ━━━
 global.repobot = 'https://github.com/giuseakanex-cmyk/legambot'
 global.gruppo = 'https://chat.whatsapp.com/bysamakavare'
 global.canale = 'https://whatsapp.com/channel/0029VbB41Sa1Hsq1JhsC1Z1z'
 global.insta = 'https://www.instagram.com/tessere____'
 
-/*⭑⭒━━━✦❘🗝️ API KEYS 🌍༺❘✦━━━⭒⭑*/
-
+// ━━━ 787 SYSTEM: API KEYS ━━━
 global.APIKeys = {
     spotifyclientid: 'varebot',
     spotifysecret: 'varebot',
@@ -58,55 +54,47 @@ global.APIKeys = {
     lastfm: '36f859a1fc4121e7f0e931806507d5f9',
 }
 
-/*⭑⭒━━━✦❘༻🪷 SISTEMA XP/EURO 💸༺❘✦━━━⭒⭑*/
-
+// ━━━ 787 SYSTEM: ECONOMY ━━━
 global.multiplier = 1
 
-/*⭑⭒━━━✦❘༻ 🎨 ESTETICA GLOBALE LEGAM OS 🎨 ༺❘✦━━━⭒⭑*/
-
-// La tua immagine caricata su ibb.co
+// ━━━ 787 SYSTEM: INTERFACE GRAPHICS ━━━
 global.logoLegam = 'https://i.ibb.co/gMDMVjJn/IMG-1824.png'
 
-// La scheda grafica personalizzata che rimpiazza Varebot
 global.rcanal = {
     contextInfo: {
         isForwarded: true,
         forwardedNewsletterMessageInfo: {
             newsletterJid: "120363259442839354@newsletter",
-            newsletterName: "✨.✦★彡 𝐋𝐞𝐠𝐚𝐦 𝐎𝐒 𝐂𝐨𝐫𝐞 Ξ★✦.•",
+            newsletterName: "787 SYSTEM CORE",
             serverMessageId: 100
         },
         externalAdReply: {
             showAdAttribution: true,
-            title: "𝐋 𝐄 𝐆 𝐀 𝐌   𝐎 𝐒",
-            body: "➤ Sviluppato da Giuse",
-            mediaType: 1, // 1 per miniatura piccola quadrata, 2 per immagine grande rettangolare
+            title: "7 8 7   S Y S T E M",
+            body: "↪ Terminal ID: Giuse",
+            mediaType: 1,
             renderLargerThumbnail: false,
             thumbnailUrl: global.logoLegam,
-            sourceUrl: global.insta // Cliccando sulla scheda si apre il tuo Instagram
+            sourceUrl: global.insta 
         }
     }
 }
 
-// Applica questa grafica ovunque il bot usi 'global.fake' o 'global.rcanal'
 global.fake = global.rcanal;
 
-/*⭑⭒━━━✦❘༻📦 RELOAD 📦༺❘✦━━━⭒⭑*/
-
+// ━━━ 787 SYSTEM: RELOAD HANDLER ━━━
 let filePath = fileURLToPath(import.meta.url)
 let fileUrl = pathToFileURL(filePath).href
 
 const reloadConfig = async () => {
-  console.log(chalk.bgHex('#3b0d95')(chalk.white.bold("File: 'config.js' Aggiornato")))
+  console.log(chalk.white.bold("➡ [SISTEMA] 'config.js' aggiornato correttamente."))
   try {
     await import(`${fileUrl}?update=${Date.now()}`)
   } catch (e) {
-    console.error('[ERRORE] Errore nel reload di config.js:', e)
+    console.error('➡ [ERRORE] Fallimento nel reload critico:', e)
   }
 }
 
 watchFile(filePath, reloadConfig)
 
 export default {}
-
-
