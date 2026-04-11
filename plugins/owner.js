@@ -1,32 +1,30 @@
 let handler = async (m, { conn, usedPrefix }) => {
-    // Reazione di rispetto per l'owner
-    await conn.sendMessage(m.chat, { react: { text: '👑', key: m.key } });
+    // Reazione di protocollo
+    await conn.sendMessage(m.chat, { react: { text: '⌬', key: m.key } });
 
     const ownerInstagram = "https://www.instagram.com/giuse0_9?igsh=dmhmczV2MHd5ZjJ0&utm_source=qr";
     
     const textMsg = `
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦
-·  𝐋 𝐄 𝐆 𝐀 𝐌  𝐎 𝐖 𝐍 𝐄 𝐑  ·
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦
+⌬ ━━━───  𝟕 𝟖 𝟕  𝐒 𝐘 𝐒 𝐓 𝐄 𝐌  ───━━━ ⌬
 
-『 👑 』 𝐈 𝐃 𝐄 𝐍 𝐓 𝐈 𝐓 𝐀̀
-· 𝐍𝐨𝐦𝐞 ➻ 𝐆𝐈𝐔𝐒𝐄
-· 𝐑𝐮𝐨𝐥𝐨 ➻ 𝐅𝐨𝐮𝐧𝐝𝐞𝐫 & 𝐃𝐞𝐯𝐞𝐥𝐨𝐩𝐞𝐫
-· 𝐒𝐢𝐬𝐭𝐞𝐦𝐚 ➻ 𝐋𝐞𝐠𝐚𝐦 𝐎𝐒 𝐂𝐨𝐫𝐞
+⌬ ❯ **𝐎𝐖𝐍𝐄𝐑 𝐈𝐍𝐅𝐎**
+· Nome ➻ GIUSE
+· Ruolo ➻ Developer & Architecture
+· Core ➻ 787 SYSTEM
 
-『 🌐 』 𝐒 𝐎 𝐂 𝐈 𝐀 𝐋
-· 𝐈𝐧𝐬𝐭𝐚𝐠𝐫𝐚𝐦 ➻ @giuse0_9
-· 𝐏𝐫𝐨𝐟𝐢𝐥𝐨 ➻ ${global.insta}
+⌬ ❯ **𝐒𝐎𝐂𝐈𝐀𝐋**
+· Instagram ➻ @giuse0_9
+· Profilo ➻ ${global.insta}
 
-『 ⚙️ 』 𝐒 𝐓 𝐀 𝐓 𝐔 𝐒
-· 𝐃𝐢𝐬𝐩𝐨𝐧𝐢𝐛𝐢𝐥𝐢𝐭𝐚̀ ➻ 𝐎𝐧𝐥𝐢𝐧𝐞
-· 𝐏𝐫𝐢𝐨𝐫𝐢𝐭𝐚̀ ➻ 𝐌𝐚𝐬𝐬𝐢𝐦𝐚
+⌬ ❯ **𝐒𝐓𝐀𝐓𝐔𝐒**
+· Disponibilità ➻ Online
+· Priorità ➻ Massima
 
-"𝑳'𝒂𝒓𝒄𝒉𝒊𝒕𝒆𝒕𝒕𝒐 𝒅𝒊𝒆𝒕𝒓𝒐 𝒍'𝒂𝒖𝒕𝒐𝒎𝒂𝒕𝒊𝒛𝒛𝒂𝒛𝒊𝒐𝒏𝒆. 
-𝑶𝒈𝒏𝒊 𝒍𝒂𝒚𝒆𝒓 𝒅𝒆𝒍 𝒔𝒊𝒔𝒕𝒆𝒎𝒂 𝒆̀ 𝒔𝒕𝒂𝒕𝒐 𝒑𝒍𝒂𝒔𝒎𝒂𝒕𝒐 
-𝒑𝒆𝒓 𝒍𝒐 𝒎𝒆𝒓𝒐 𝒔𝒄𝒐𝒑𝒐 𝒅𝒆𝒍𝒍𝒂 𝒑𝒆𝒓𝒇𝒆𝒛𝒊𝒐𝒏𝒆."
+"Perché mai dovrei odiare qualcuno più debole di me? 
+Provo solo pietà. L'architettura del sistema è 
+stata plasmata per la perfezione assoluta."
 
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`.trim();
+⌬ ━━━───  𝟕 𝟖 𝟕  𝐒 𝐘 𝐒 𝐓 𝐄 𝐌  ───━━━ ⌬`.trim();
 
     await conn.sendMessage(m.chat, {
         text: textMsg,
@@ -35,16 +33,16 @@ let handler = async (m, { conn, usedPrefix }) => {
             isForwarded: true,
             forwardedNewsletterMessageInfo: {
                 newsletterJid: '120363233544482011@newsletter',
-                newsletterName: "✨.✦★彡 𝐋𝐞𝐠𝐚𝐦 𝐎𝐒 𝐂𝐨𝐧𝐭𝐚𝐜𝐭𝐬 Ξ★✦.•",
+                newsletterName: "𝟕𝟖𝟕 𝐒𝐘𝐒𝐓𝐄𝐌 𝐎𝐕𝐄𝐑𝐑𝐈𝐃𝐄",
                 serverMessageId: 100
             },
             externalAdReply: {
                 showAdAttribution: true,
-                title: "𝐋 𝐄 𝐆 𝐀 𝐌   𝐎 𝐒   𝐀 𝐔 𝐓 𝐇 𝐎 𝐑",
-                body: "Contatta lo sviluppatore Giuse",
+                title: "𝟕 𝟖 𝟕  𝐒 𝐘 𝐒 𝐓 𝐄 𝐌  𝐀 𝐔 𝐓 𝐇 𝐎 𝐑",
+                body: "Override by Giuse",
                 mediaType: 1,
                 renderLargerThumbnail: true,
-                thumbnailUrl: global.logoLegam, // Usa il logo impostato nel config
+                thumbnailUrl: global.logoLegam, 
                 sourceUrl: ownerInstagram
             }
         }
@@ -56,4 +54,3 @@ handler.tags = ['info']
 handler.command = /^(owner|creatore|dev|sviluppatore)$/i
 
 export default handler
-
