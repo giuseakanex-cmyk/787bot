@@ -59,29 +59,29 @@ const ownerz = featureRegistry.filter(f => ownerkeyz.has(f.key));
 
 function checkPermission(feat, { m, isAdmin, isOwner, isSam }) {
   if (feat.groupOnly && !m.isGroup && !isOwner) {
-    return '╭ ━━━ ❨ ⚠️ 𝐀𝐕𝐕𝐈𝐒𝐎 ❩ ━━━ ╮\n│ ✦ 𝐆𝐑𝐔𝐏𝐏𝐎\n│ ╰➤ Comando valido solo nei gruppi.\n╰ ━━━━━━━━━━━━━ ╯';
+    return '⌬ ❯ Comando valido solo nei gruppi.';
   }
   switch (feat.perm) {
     case PERM.sam:
-      if (!isSam) return '╭ ━━━ ❨ 👑 𝐎𝐖𝐍𝐄𝐑 ❩ ━━━ ╮\n│ ✦ 𝐀𝐂𝐂𝐄𝐒𝐒𝐎 𝐍𝐄𝐆𝐀𝐓𝐎\n│ ╰➤ Richiede privilegi di creatore.\n╰ ━━━━━━━━━━━━━ ╯';
+      if (!isSam) return '⌬ ❯ ACCESSO NEGATO: Privilegi Creatore richiesti.';
       break;
     case PERM.OWNER:
-      if (feat.store === 'bot' && !isOwner && !isSam) return '╭ ━━━ ❨ 👑 𝐎𝐖𝐍𝐄𝐑 ❩ ━━━ ╮\n│ ✦ 𝐀𝐂𝐂𝐄𝐒𝐒𝐎 𝐍𝐄𝐆𝐀𝐓𝐎\n│ ╰➤ Richiede privilegi di proprietario.\n╰ ━━━━━━━━━━━━━ ╯';
+      if (feat.store === 'bot' && !isOwner && !isSam) return '⌬ ❯ ACCESSO NEGATO: Privilegi Owner richiesti.';
       if (feat.store === 'chat' && m.isGroup && !(isAdmin || isOwner || isSam))
-        return '\n🛡️ *𝐒𝐎𝐋𝐎 𝐀𝐃𝐌𝐈𝐍*\n╰➤ ✦ Questo comando è riservato agli admin.';
+        return '⌬ ❯ ACCESSO NEGATO: Riservato agli Admin.';
       break;
     case PERM.ADMIN:
       if (m.isGroup && !(isAdmin || isOwner || isSam))
-        return '\n🛡️ *𝐒𝐎𝐋𝐎 𝐀𝐃𝐌𝐈𝐍*\n╰➤ ✦ Questo comando è riservato agli admin.';
+        return '⌬ ❯ ACCESSO NEGATO: Riservato agli Admin.';
       break;
   }
   return null;
 }
 
-function handleMultiprefixToggle(bot) { /* Hook opzionale */ }
+function handleMultiprefixToggle(bot) { /* Hook */ }
 
 let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isSam }) => {
-  const userName = m.pushName || 'Utente';
+  const userName = m.pushName || 'User';
 
   let groupProfilePicBuffer;
   try {
@@ -101,12 +101,12 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isS
     forwardingScore: 999,
     forwardedNewsletterMessageInfo: {
       newsletterJid: '120363259442839354@newsletter',
-      newsletterName: "✨.✦★彡 Settings by Giuse Ξ★✦.•",
+      newsletterName: "𝟕𝟖𝟕 𝐒𝐘𝐒𝐓𝐄𝐌 𝐎𝐕𝐄𝐑𝐑𝐈𝐃𝐄",
       serverMessageId: 100
     },
     externalAdReply: {
-      title: "✨ 𝐆𝐈𝐔𝐒𝐄𝐁𝐎𝐓 𝐒𝐘𝐒𝐓𝐄𝐌 ✨",
-      body: "Pannello di Controllo Moduli",
+      title: "𝟕𝟖𝟕 𝐒𝐘𝐒𝐓𝐄𝐌 🛡️ 𝐒𝐄𝐓𝐓𝐈𝐍𝐆𝐒",
+      body: "Override Moduli Attivo",
       mediaType: 1,
       jpegThumbnail: groupProfilePicBuffer
     }
@@ -115,7 +115,6 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isS
   let isEnable = /true|enable|attiva|(turn)?on|1/i.test(command);
   if (/disable|disattiva|off|0/i.test(command)) isEnable = false;
 
-  // Inizializzazione sicura del Database
   global.db.data.chats = global.db.data.chats || {};
   global.db.data.users = global.db.data.users || {};
   global.db.data.settings = global.db.data.settings || {};
@@ -139,8 +138,8 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isS
     const active = features.filter(f => getStatus(f.key));
     const inactive = features.filter(f => !getStatus(f.key));
     return [
-      { title: '🔴 𝐌𝐨𝐝𝐮𝐥𝐢 𝐃𝐢𝐬𝐚𝐭𝐭𝐢𝐯𝐚𝐭𝐢', rows: inactive.map(f => ({ title: f.name, description: f.desc, id: `${usedPrefix}attiva ${f.key}` })) },
-      { title: '🟢 𝐌𝐨𝐝𝐮𝐥𝐢 𝐀𝐭𝐭𝐢𝐯𝐚𝐭𝐢', rows: active.map(f => ({ title: f.name, description: f.desc, id: `${usedPrefix}disattiva ${f.key}` })) }
+      { title: '🔴 MODULI DISATTIVATI', rows: inactive.map(f => ({ title: f.name, description: f.desc, id: `${usedPrefix}attiva ${f.key}` })) },
+      { title: '🟢 MODULI ATTIVATI', rows: active.map(f => ({ title: f.name, description: f.desc, id: `${usedPrefix}disattiva ${f.key}` })) }
     ];
   };
 
@@ -152,9 +151,9 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isS
 
     const adminCard = {
       image: { url: 'https://files.catbox.moe/pyp87f.jpg' }, 
-      title: '『 👥 𝐒𝐄𝐓𝐓𝐈𝐍𝐆𝐒 𝐀𝐃𝐌𝐈𝐍 』',
-      body: '✧ _Gestisci le funzioni di sicurezza e intrattenimento del gruppo._',
-      footer: '*─ׄ✦☾⋆⁺₊✧ 𝐆𝐈𝐔𝐒𝐄𝐁𝐎𝐓 ✧₊⁺⋆☽✦─ׅ⭒*',
+      title: '『 👥 SETTINGS ADMIN 』',
+      body: 'Gestione sicurezze e configurazione chat.',
+      footer: '⌬  𝟕 𝟖 𝟕  𝐒 𝐘 𝐒 𝐓 𝐄 𝐌  ⌬',
       buttons: [{ name: 'single_select', buttonParamsJson: JSON.stringify({ title: '⚙️ APRI PANNELLO', sections: adminSections }) }]
     };
 
@@ -162,9 +161,9 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isS
     if (isOwner || isSam) {
       cards.push({
         image: { url: 'https://files.catbox.moe/pyp87f.jpg' }, 
-        title: '『 👑 𝐒𝐄𝐓𝐓𝐈𝐍𝐆𝐒 𝐎𝐖𝐍𝐄𝐑 』',
-        body: '✧ _Gestisci il core e i limiti globali del bot._',
-        footer: '*─ׄ✦☾⋆⁺₊✧ 𝐆𝐈𝐔𝐒𝐄𝐁𝐎𝐓 ✧₊⁺⋆☽✦─ׅ⭒*',
+        title: '『 👑 SETTINGS OWNER 』',
+        body: 'Gestione core bot e permessi globali.',
+        footer: '⌬  𝟕 𝟖 𝟕  𝐒 𝐘 𝐒 𝐓 𝐄 𝐌  ⌬',
         buttons: [{ name: 'single_select', buttonParamsJson: JSON.stringify({ title: '⚙️ APRI PANNELLO', sections: ownerSections }) }]
       });
     }
@@ -172,7 +171,7 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isS
     const fkontak = { key: { participant: m.sender, remoteJid: '0@s.whatsapp.net', fromMe: false, id: 'BotAssistant' }, message: { contactMessage: { displayName: userName, vcard: buildVcard(), jpegThumbnail: groupProfilePicBuffer } }, participant: m.sender };
 
     return conn.sendMessage(m.chat, {
-      text: 'ㅤㅤ⋆｡˚『 ╭ `𝐏𝐀𝐍𝐍𝐄𝐋𝐋𝐎 𝐃𝐈 𝐂𝐎𝐍𝐓𝐑𝐎𝐋𝐋𝐎` ╯ 』˚｡⋆',
+      text: '⌬ ━━━───  𝟕 𝟖 𝟕  𝐒 𝐘 𝐒 𝐓 𝐄  𝐌  ───━━━ ⌬',
       cards,
       contextInfo: contextFake
     }, { quoted: fkontak });
@@ -181,43 +180,36 @@ let handler = async (m, { conn, usedPrefix, command, args, isOwner, isAdmin, isS
   let results = [];
   for (let type of args.map(arg => arg.toLowerCase())) {
     let result = { type, status: '', success: false };
-
     const feat = aliasMap.get(type);
     if (!feat) {
-      result.status = '❌ _Comando Sconosciuto_';
+      result.status = '❌ Sconosciuto';
       results.push(result);
       continue;
     }
-
     const permError = checkPermission(feat, { m, isAdmin, isOwner, isSam });
     if (permError) {
       result.status = permError;
       results.push(result);
       continue;
     }
-
     const target = feat.store === 'bot' ? bot : chat;
     if (target[feat.key] === isEnable) {
-      result.status = `⚠️ _Già ${isEnable ? 'Attivo' : 'Disattivato'}_`;
+      result.status = `⚠️ Già ${isEnable ? 'Attivo' : 'Off'}`;
       results.push(result);
       continue;
     }
-
     target[feat.key] = isEnable;
     if (feat.onToggle === 'multiprefix') handleMultiprefixToggle(bot);
-
-    result.status = `✅ *${isEnable ? '𝐀𝐓𝐓𝐈𝐕𝐀𝐓𝐎' : '𝐃𝐈𝐒𝐀𝐓𝐓𝐈𝐕𝐀𝐓𝐎'}*`;
+    result.status = `✅ ${isEnable ? 'ATTIVATO' : 'DISATTIVATO'}`;
     result.success = true;
     results.push(result);
   }
 
-  let summaryMessage = `ㅤㅤ⋆｡˚『 ╭ \`𝐒𝐘𝐒𝐓𝐄𝐌 𝐋𝐎𝐆\` ╯ 』˚｡⋆\n╭━━━━━━━━━━━━━━━━━━━━⬣\n`;
+  let summaryMessage = `⌬ ━━━───  𝐒𝐘𝐒𝐓𝐄𝐌 𝐋𝐎𝐆  ───━━━ ⌬\n\n`;
   for (const result of results) {
-    const cleanType = String(result.type || '').trim().toUpperCase();
-    const cleanStatus = String(result.status || '').replace(/^\s*\n+/, ' ').replace(/^\s*-\s*/, ' ').trimEnd();
-    summaryMessage += `┃ ➤ 𝐅𝐮𝐧𝐳𝐢𝐨𝐧𝐞: \`${cleanType}\`\n┃ ╰ ⌕ 𝐒𝐭𝐚𝐭𝐨: ${cleanStatus}\n`;
+    summaryMessage += `⌬ ❯ 𝐅𝐮𝐧𝐳𝐢𝐨𝐧 e: \`${result.type.toUpperCase()}\`\n⌬ ❯ 𝐒𝐭𝐚𝐭𝐨: ${result.status}\n───────────────────\n`;
   }
-  summaryMessage += `*╰⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒*`;
+  summaryMessage += `⌬ ━━━───  𝟕 𝟖 𝟕  ───━━━ ⌬`;
 
   const fkontak_confirm = { key: { participant: m.sender, remoteJid: '0@s.whatsapp.net', fromMe: false, id: 'BotFunction' }, message: { contactMessage: { displayName: userName, vcard: buildVcard(), jpegThumbnail: groupProfilePicBuffer } }, participant: m.sender };
 
@@ -232,5 +224,3 @@ handler.tags = ['main'];
 handler.command = ['enable', 'disable', 'attiva', 'disattiva']; 
 
 export default handler;
-
-
