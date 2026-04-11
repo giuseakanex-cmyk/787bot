@@ -13,7 +13,7 @@ let handler = async (m, { conn, usedPrefix }) => {
 · Core ➻ 787 SYSTEM
 
 ⌬ ❯ **𝐒𝐎𝐂𝐈𝐀𝐋**
-· Instagram ➻ @giuse0_9
+· Instagram ➻ @tessere___
 · Profilo ➻ ${global.insta}
 
 ⌬ ❯ **𝐒𝐓𝐀𝐓𝐔𝐒**
