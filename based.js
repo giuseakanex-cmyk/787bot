@@ -132,16 +132,33 @@ async function connectionUpdate(update) {
             `-------  -------  -------  `,
             `  [ 787 SYSTEM ONLINE ]    `
         ];
-        logo.forEach(l => console.log(chalk.white.bold(l)));
-        console.log(chalk.gray(`\n➡ Sessione: Stabilita\n➡ Stato: Pronto\n`));
+        logo.forEach(l => console.log(chalk.cyan.bold(l)));
+        console.log(chalk.green(`\n➡ Sessione: Stabilita\n➡ Stato: Pronto\n`));
     }
 
     if (connection === 'close') {
         const reason = lastDisconnect?.error?.output?.statusCode;
         console.log(chalk.gray(`\n↩ CONNESSIONE INTERROTTA: Protocollo ${reason}`));
-        process.exit();
+        
+        // Se l'errore è 401 (Unauthorized), il bot cancella la cartella corrotta in automatico.
+        if (reason === 401) {
+            console.log(chalk.red.bold(`➡ [!] CREDENZIALI CORROTTE O DISCONNESSE.`));
+            console.log(chalk.yellow(`➡ [!] Esecuzione protocollo di pulizia automatica...`));
+            try {
+                rmSync('./session', { recursive: true, force: true });
+                console.log(chalk.green(`➡ [!] Cartella 'session' eliminata con successo.`));
+            } catch (e) {
+                console.log(chalk.red(`➡ [!] Impossibile eliminare la cartella. Usa: rm -rf session`));
+            }
+            console.log(chalk.white.bold(`➡ [!] Riavvia il sistema (node based.js) per generare un nuovo Pairing Code.`));
+            process.exit(); // Esce pulito per permetterti il riavvio
+        } else {
+            console.log(chalk.yellow(`➡ [!] Chiusura anomala. Riavvio manuale necessario.`));
+            process.exit();
+        }
     }
 }
+
 
 // --- PULIZIA AUTOMATICA ---
 setInterval(async () => {
