@@ -9,7 +9,6 @@ import yargs from 'yargs';
 import { spawn } from 'child_process';
 import lodash from 'lodash';
 import chalk from 'chalk';
-import { format } from 'util';
 import pino from 'pino';
 import { makeWASocket, protoType, serialize } from './lib/simple.js';
 import { Low, JSONFile } from 'lowdb';
@@ -17,15 +16,12 @@ import NodeCache from 'node-cache';
 
 const { useMultiFileAuthState, makeCacheableSignalKeyStore, Browsers, jidNormalizedUser, makeInMemoryStore } = await import('@realvare/baileys');
 const { chain } = lodash;
-const PORT = process.env.PORT || 3000;
 
 protoType();
 serialize();
 
-global.isLogoPrinted = false;
-global.qrGenerated = false;
-let methodCodeQR = process.argv.includes("qr");
-let methodCode = process.argv.includes("code");
+// --- CONFIGURAZIONE NOMI ---
+global.authFile = 'session'; 
 let phoneNumber = global.botNumberCode;
 
 // --- UTILS ---
@@ -44,10 +40,10 @@ global.loadDatabase = async function loadDatabase() {
     await global.db.read().catch(console.error);
     global.db.data = { users: {}, chats: {}, settings: {}, ...(global.db.data || {}) };
 };
-loadDatabase();
+await loadDatabase();
 
-// --- AUTH SYSTEM 787 ---
-const { state, saveCreds } = await useMultiFileAuthState('session');
+// --- AUTH SYSTEM ---
+const { state, saveCreds } = await useMultiFileAuthState(global.authFile);
 const question = (t) => {
     process.stdout.write(t);
     return new Promise((resolve) => {
@@ -55,122 +51,79 @@ const question = (t) => {
     });
 };
 
-if (!methodCodeQR && !methodCode && !fs.existsSync(`./session/creds.json`)) {
+let opzione;
+if (!fs.existsSync(`./${global.authFile}/creds.json`)) {
     console.clear();
-    let opzione;
-    do {
-        const head = chalk.white.bold('━━━ 787 SYSTEM AUTH ━━━');
-        const line = chalk.gray('───────────────────────');
-        const menu = `
-${head}
-${line}
- 1 ➡ Sincronizzazione via QR
- 2 ➡ Link via Pairing Code
-${line}
- ↪ Seleziona protocollo di accesso.
- 
- ${chalk.white.bold('787-terminal')} ➡ `;
-
-        opzione = await question(menu);
-
-        if (opzione === '1') methodCodeQR = true;
-        else if (opzione === '2') methodCode = true;
-        else console.log(chalk.red('\n➡ ERRORE: Inserire 1 o 2.'));
-        
-    } while (opzione !== '1' && opzione !== '2');
+    console.log(chalk.cyan.bold('\n━━━ 787 SYSTEM: SETUP INIZIALE ━━━'));
+    console.log(chalk.white(' 1 ➡ QR CODE\n 2 ➡ PAIRING CODE'));
+    opzione = await question(chalk.green.bold('\nSeleziona 1 o 2 ➤ '));
 }
 
-// --- CONFIGURAZIONE CONNESSIONE ---
+// --- CONNESSIONE ---
 const logger = pino({ level: 'silent' });
-global.store = makeInMemoryStore({ logger });
+const msgRetryCounterCache = new NodeCache();
 
 const connectionOptions = {
     logger,
-    browser: Browsers.macOS('Safari'),
+    // FIX: Usiamo Ubuntu/Chrome per evitare il blocco "Impossibile collegare"
+    browser: ['Ubuntu', 'Chrome', '110.0.5481.178'], 
     auth: {
         creds: state.creds,
         keys: makeCacheableSignalKeyStore(state.keys, logger),
     },
-    printQRInTerminal: methodCodeQR,
+    printQRInTerminal: opzione === '1',
     markOnlineOnConnect: true,
-    generateHighQualityThumbnail: true
+    msgRetryCounterCache
 };
 
 global.conn = makeWASocket(connectionOptions);
+global.store = makeInMemoryStore({ logger });
 global.store.bind(global.conn.ev);
 
 // --- PAIRING CODE LOGIC ---
-if (methodCode && !conn.authState.creds.registered) {
+if (opzione === '2' && !conn.authState.creds.registered) {
     let num = phoneNumber ? phoneNumber.replace(/[^0-9]/g, '') : '';
     if (!num) {
-        num = await question(`\n➡ INSERIRE NUMERO (Esempio: 39347...)\n${chalk.white.bold('787-terminal')} ➡ `);
+        num = await question(chalk.bgCyan.black('\n Inserisci il numero (es. 39347...) ') + ' ➤ ');
         num = num.replace(/\D/g, '');
     }
     setTimeout(async () => {
         let code = await conn.requestPairingCode(num, '787BOT01');
         code = code?.match(/.{1,4}/g)?.join("-") || code;
-        console.log(chalk.black.bgWhite('\n 787 PAIRING CODE ') + ' ' + chalk.white.bold(code) + '\n');
+        console.log(chalk.black.bgGreen('\n 🔑 CODICE PAIRING: ') + ' ' + chalk.white.bold(code) + '\n');
     }, 3000);
 }
 
-// --- GESTORE CONNESSIONE ---
+// --- GESTORE EVENTI ---
 async function connectionUpdate(update) {
     const { connection, lastDisconnect, qr } = update;
     
-    if (qr && methodCodeQR && !global.qrGenerated) {
-        console.log(chalk.white.bold('\n➡ PROTOCOLLO QR ATTIVO\n↪ Scansiona per stabilire il link.'));
-        global.qrGenerated = true;
+    if (qr && opzione === '1') {
+        console.log(chalk.yellow('\n[!] Scansiona il QR Code qui sopra.'));
     }
 
     if (connection === 'open') {
         console.clear();
-        const logo = [
-            `  ______   ______   ______ `,
-            ` /      \\ /      \\ /      \\`,
-            ` ------  |------  |------  |`,
-            `/      / /      / /      / `,
-            `-------  -------  -------  `,
-            `  [ 787 SYSTEM ONLINE ]    `
-        ];
-        logo.forEach(l => console.log(chalk.cyan.bold(l)));
-        console.log(chalk.green(`\n➡ Sessione: Stabilita\n➡ Stato: Pronto\n`));
+        console.log(chalk.cyan.bold('\n━━━ 787 SYSTEM ONLINE ━━━'));
+        console.log(chalk.green('➡ Connessione stabilita con successo.\n'));
     }
 
     if (connection === 'close') {
         const reason = lastDisconnect?.error?.output?.statusCode;
-        console.log(chalk.gray(`\n↩ CONNESSIONE INTERROTTA: Protocollo ${reason}`));
+        console.log(chalk.red(`\n↩ CONNESSIONE CHIUSA: Protocollo ${reason}`));
         
-        // Se l'errore è 401 (Unauthorized), il bot cancella la cartella corrotta in automatico.
-        if (reason === 401) {
-            console.log(chalk.red.bold(`➡ [!] CREDENZIALI CORROTTE O DISCONNESSE.`));
-            console.log(chalk.yellow(`➡ [!] Esecuzione protocollo di pulizia automatica...`));
-            try {
-                rmSync('./session', { recursive: true, force: true });
-                console.log(chalk.green(`➡ [!] Cartella 'session' eliminata con successo.`));
-            } catch (e) {
-                console.log(chalk.red(`➡ [!] Impossibile eliminare la cartella. Usa: rm -rf session`));
-            }
-            console.log(chalk.white.bold(`➡ [!] Riavvia il sistema (node based.js) per generare un nuovo Pairing Code.`));
-            process.exit(); // Esce pulito per permetterti il riavvio
+        // Protocollo Auto-Reset per Errore 401 (Unauthorized)
+        if (reason === 401 || reason === 405) {
+            console.log(chalk.yellow('➡ Sessione corrotta. Reset cartella session in corso...'));
+            rmSync(`./${global.authFile}`, { recursive: true, force: true });
+            process.exit(1);
         } else {
-            console.log(chalk.yellow(`➡ [!] Chiusura anomala. Riavvio manuale necessario.`));
-            process.exit();
+            // Per altri errori, prova a riavviare il processo
+            process.exit(0);
         }
     }
 }
 
-
-// --- PULIZIA AUTOMATICA ---
-setInterval(async () => {
-    if (!existsSync('./temp')) return;
-    const files = readdirSync('./temp');
-    if (files.length > 0) {
-        files.forEach(f => unlinkSync(join('./temp', f)));
-        console.log(chalk.gray(`➡ [SISTEMA] Cache multimediale svuotata.`));
-    }
-}, 1000 * 60 * 60);
-
-// --- INIZIALIZZAZIONE ---
 conn.ev.on('connection.update', connectionUpdate);
 conn.ev.on('creds.update', saveCreds);
 
@@ -179,4 +132,12 @@ let handler = await import('./handler.js');
 conn.handler = handler.handler.bind(global.conn);
 conn.ev.on('messages.upsert', conn.handler);
 
-console.log(chalk.gray(`➡ Inizializzazione 787 Core in corso...`));
+// --- PULIZIA TEMP ---
+setInterval(() => {
+    if (existsSync('./temp')) {
+        const files = readdirSync('./temp');
+        files.forEach(f => unlinkSync(join('./temp', f)));
+    }
+}, 1000 * 60 * 60);
+
+console.log(chalk.gray(`➡ 787 Core inizializzato.`));
