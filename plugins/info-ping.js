@@ -29,11 +29,11 @@ let handler = async (m, { conn, usedPrefix }) => {
 
     await conn.sendMessage(m.chat, {
       text: textMsg,
-      footer: "Powered by 787-Core Engine",
+      footer: "✧ 𝐋 𝐄 𝐆 𝐀 𝐌  𝐎 𝐒 ✧",
       buttons: [
-        { buttonId: usedPrefix + "stats", buttonText: { displayText: "📊 STATS" }, type: 1 },
-        { buttonId: usedPrefix + "menu", buttonText: { displayText: "⌬ MENU" }, type: 1 },
-        { buttonId: usedPrefix + "ds", buttonText: { displayText: "🗑️ CLEAR SESSION" }, type: 1 }
+        { buttonId: usedPrefix + "stats", buttonText: { displayText: "📊 𝐒𝐭𝐚𝐭𝐬" }, type: 1 },
+        { buttonId: usedPrefix + "menu", buttonText: { displayText: "✧𝐌𝐞𝐧𝐮✧" }, type: 1 },
+        { buttonId: usedPrefix + "ds", buttonText: { displayText: "🗑️ 𝐒𝐯𝐮𝐨𝐭𝐚 𝐒𝐞𝐬𝐬𝐢𝐨𝐧𝐢" }, type: 1 }
       ],
       headerType: 1,
       contextInfo: {
@@ -49,7 +49,7 @@ let handler = async (m, { conn, usedPrefix }) => {
 
   } catch (err) {
     console.error(err);
-    m.reply("⌬ ❯ `SYSTEM_FAILURE: CALCULATION_ERROR` ");
+    m.reply("⌬ ❯ `SYSTEM_FAILURE` ");
   }
 };
 
