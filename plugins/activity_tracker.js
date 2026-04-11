@@ -1,10 +1,10 @@
-
 // ==========================================
-// LEGAM OS - ACTIVITY TRACKER & REWARDS (SAFE MONEY)
+// 787 SYSTEM - ACTIVITY TRACKER & REWARDS 
 // ==========================================
 
-const legamHeader = `✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n·  𝐋 𝐄 𝐆 𝐀 𝐌  𝐎 𝐒  ·\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`;
-const legamFooter = `✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n. . ✦  .  ⁺  .  ✦  . .`;
+const sysHeader = `⌬ ━━━───  𝟕 𝟖 𝟕  𝐒 𝐘 𝐒 𝐓 𝐄 𝐌  ───━━━ ⌬`;
+const sysSeparator = `◈───────────────────────────◈`;
+const sysFooter = `⌬ ━━━───  𝐒𝐘𝐒𝐓𝐄𝐌 𝐀𝐂𝐓𝐈𝐕𝐄  ───━━━ ⌬`;
 
 // ================================================
 // 🔄 COMANDO MANUALE: !resetstats (Solo Admin)
@@ -12,16 +12,25 @@ const legamFooter = `✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n. . ✦  .  
 let handler = async (m, { conn, isGroup, isAdmin, isOwner }) => {
     if (!isGroup) return;
     
-    // Controlla se chi usa il comando è admin o owner
     if (!isAdmin && !isOwner) {
-        return m.reply("❌ Comando riservato agli Amministratori.");
+        return m.reply("⚠ 𝐀𝐂𝐂𝐄𝐒𝐒𝐎 𝐍𝐄𝐆𝐀𝐓𝐎: Permessi insufficienti.");
     }
 
-    // Azzera SOLO le statistiche di attività del gruppo (messaggi e tempo)
+    // Reset statistiche attività
     global.db.data.groupActivity = global.db.data.groupActivity || {};
     global.db.data.groupActivity[m.chat] = {}; 
     
-    let msg = `${legamHeader}\n\n『 🔄 』 𝐑 𝐄 𝐒 𝐄 𝐓  𝐒 𝐓 𝐀 𝐓 𝐒\n· Statistiche di attività azzerate!\n· 💰 I soldi degli utenti sono intatti.\n\n${legamFooter}`;
+    let msg = `
+${sysHeader}
+
+⌬ ❯ 𝐑 𝐄 𝐒 𝐄 𝐓  𝐒 𝐓 𝐀 𝐓 𝐒
+${sysSeparator}
+➡ Protocollo di reset completato.
+➡ Database attività ricalibrato.
+↪ 💰 I crediti utente sono rimasti invariati.
+
+${sysFooter}`;
+
     await conn.sendMessage(m.chat, { text: msg }, { quoted: m });
 };
 
@@ -31,14 +40,12 @@ let handler = async (m, { conn, isGroup, isAdmin, isOwner }) => {
 handler.before = async function (m) {
     if (!m.chat || m.fromMe || !m.sender || !m.isGroup) return;
 
-    // Crea i database se non esistono
     global.db.data.groupActivity = global.db.data.groupActivity || {};
     if (!global.db.data.groupActivity[m.chat]) global.db.data.groupActivity[m.chat] = {};
 
     let now = Date.now();
     let chatData = global.db.data.groupActivity[m.chat];
 
-    // Se l'utente non ha mai scritto nel gruppo, inizializzalo
     if (!chatData[m.sender]) {
         chatData[m.sender] = {
             msgCount: 0,
@@ -50,62 +57,59 @@ handler.before = async function (m) {
     
     let userAct = chatData[m.sender];
 
-    // Inizializzazione sicura dei soldi dell'utente nel database principale (INTOCCABILE DAL RESET)
     global.db.data.users = global.db.data.users || {};
     if (!global.db.data.users[m.sender]) global.db.data.users[m.sender] = { euro: 0 };
     if (typeof global.db.data.users[m.sender].euro !== 'number') global.db.data.users[m.sender].euro = 0;
 
-    // ================================================
-    // ⏱️ 1. CALCOLO PRECISO DEI SECONDI ONLINE
-    // ================================================
+    // ⏱️ CALCOLO TEMPO ATTIVO
     let diffSeconds = Math.floor((now - userAct.lastMessageTime) / 1000);
-    let secondsToAdd = 0;
-
-    if (diffSeconds > 0 && diffSeconds <= 300) {
-        secondsToAdd = diffSeconds;
-    } else {
-        secondsToAdd = 10; 
-    }
+    let secondsToAdd = (diffSeconds > 0 && diffSeconds <= 300) ? diffSeconds : 10;
 
     userAct.onlineTime += secondsToAdd;
     userAct.timeForReward += secondsToAdd;
     userAct.lastMessageTime = now;
 
-    // ================================================
-    // 🎯 2. TRAGUARDO MESSAGGI (Ogni 100 nel gruppo)
-    // ================================================
+    // 🎯 REWARD: MESSAGGI (Ogni 100)
     userAct.msgCount += 1;
     if (userAct.msgCount % 100 === 0) {
-        // Assegna i soldi
         global.db.data.users[m.sender].euro += 200; 
         
-        let msgReward = `🎉 @${m.sender.split('@')[0]} hai scritto altri 100 messaggi in questo gruppo, hai guadagnato 200€!`;
+        let msgReward = `
+${sysHeader}
+⌬ ❯ 𝐑 𝐄 𝐖 𝐀 𝐑 𝐃  𝐃 𝐄 𝐓 𝐄 𝐂 𝐓 𝐄 𝐃
+${sysSeparator}
+➡ Utente: @${m.sender.split('@')[0]}
+➡ Obiettivo: 𝐡𝐚𝐢 𝐬𝐜𝐫𝐢𝐭𝐭𝐨 𝐚𝐥𝐭𝐫𝐢 𝟏𝟎𝟎 𝐦𝐞𝐬𝐬𝐚𝐠𝐠𝐢!
+↪ 💰 Accredito: *200€*
+${sysFooter}`;
+
         await this.sendMessage(m.chat, { text: msgReward, mentions: [m.sender] });
     }
 
-    // ================================================
-    // 🎁 3. TRAGUARDO TEMPO (Ogni 1 Ora nel gruppo)
-    // ================================================
+    // 🎁 REWARD: TEMPO (Ogni 1 Ora)
     if (userAct.timeForReward >= 3600) {
-        // Assegna i soldi e resetta solo il contatore "timeForReward"
         global.db.data.users[m.sender].euro += 300;
         userAct.timeForReward = 0; 
         
-        let oreTotali = Math.floor(userAct.onlineTime / 3600);
-        if (oreTotali < 1) oreTotali = 1; // Sicurezza
+        let oreTotali = Math.floor(userAct.onlineTime / 3600) || 1;
         
-        let txtOra = `🎉 @${m.sender.split('@')[0]} hai raggiunto *${oreTotali} ore* di attività nel gruppo, hai guadagnato 300€!`;
+        let txtOra = `
+${sysHeader}
+⌬ ❯ 𝐋 𝐄 𝐕 𝐄 𝐋  𝐔 𝐏  𝐀 𝐂 𝐓 𝐈 𝐕 𝐈 𝐓 𝐘
+${sysSeparator}
+➡ Utente: @${m.sender.split('@')[0]}
+➡ Obiettivo: 𝐡𝐚𝐢 𝐫𝐚𝐠𝐠𝐢𝐮𝐧𝐭𝐨 ${oreTotali} 𝐨𝐫𝐞 𝐝𝐢 𝐚𝐭𝐭𝐢𝐯𝐢𝐭𝐚̀!
+↪ 💰 Bonus Fedeltà: *300€*
+${sysFooter}`;
+
         await this.sendMessage(m.chat, { text: txtOra, mentions: [m.sender] });
     }
 };
 
 handler.help = ['resetstats'];
 handler.tags = ['admin'];
-// Si può chiamare sia !resetstats che !azzerastats
 handler.command = /^(resetstats|azzerastats)$/i;
 handler.group = true;
 handler.admin = true;
 
 export default handler;
-
-
