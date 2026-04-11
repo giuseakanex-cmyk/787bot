@@ -27,7 +27,7 @@ const DisconnectReason = {
     forbidden: 403,
     unavailableService: 503
 };
-const { useMultiFileAuthState, makeCacheableSignalKeyStore, Browsers, jidNormalizedUser, makeInMemoryStore } = await import('@realvare/baileys');
+const { useMultiFileAuthState, makeCacheableSignalKeyStore, Browsers, jidNormalizedUser, makeInMemoryStore, fetchLatestBaileysVersion } = await import('@realvare/baileys');
 const { chain } = lodash;
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 protoType();
@@ -51,60 +51,114 @@ global.__require = function require(dir = import.meta.url) {
     return createRequire(dir);
 };
 
+global.API = (name, path = '/', query = {}, apikeyqueryname) => (name in global.APIs ? global.APIs[name] : name) + path + (query || apikeyqueryname ? '?' + new URLSearchParams(Object.entries({ ...query, ...(apikeyqueryname ? { [apikeyqueryname]: global.APIKeys[name in global.APIs ? global.APIs[name] : name] } : {}) })) : '');
 global.timestamp = { start: new Date };
 const __dirname = global.__dirname(import.meta.url);
 global.opts = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse());
+global.prefix = new RegExp('^[' + (opts['prefix'] || '*/!#$%+£¢€¥^°=¶∆×÷π√✓©®&.\\-.@').replace(/[|\\{}()[\]^$+*.\-\^]/g, '\\$&') + ']');
 global.db = new Low(new JSONFile('database.json'));
 global.DATABASE = global.db;
 global.loadDatabase = async function loadDatabase() {
     if (global.db.READ) {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             const interval = setInterval(() => {
                 if (!global.db.READ) {
                     clearInterval(interval);
-                    resolve(global.db.data);
+                    resolve(global.db.data == null ? global.loadDatabase() : global.db.data);
                 }
-            }, 1000);
+            }, 1 * 1000);
+            setTimeout(() => {
+                clearInterval(interval);
+                global.db.READ = null;
+                reject(new Error('loadDatabase timeout'));
+            }, 15000);
+        }).catch((e) => {
+            console.error('[ERRORE] loadDatabase:', e.message);
+            return global.loadDatabase();
         });
     }
     if (global.db.data !== null) return;
     global.db.READ = true;
     await global.db.read().catch(console.error);
     global.db.READ = null;
-    global.db.data = { users: {}, chats: {}, settings: {}, ...(global.db.data || {}) };
+    global.db.data = {
+        users: {},
+        chats: {},
+        settings: {},
+        ...(global.db.data || {}),
+    };
     global.db.chain = chain(global.db.data);
 };
 loadDatabase();
 
+global.creds = 'creds.json';
 global.authFile = 'session';
+
 const { state, saveCreds } = await useMultiFileAuthState(global.authFile);
 const msgRetryCounterCache = new NodeCache();
 const question = (t) => {
     process.stdout.write(t);
     return new Promise((resolve) => {
-        process.stdin.once('data', (data) => resolve(data.toString().trim()));
+        process.stdin.once('data', (data) => {
+            resolve(data.toString().trim());
+        });
     });
 };
 
 let opzione;
 if (!methodCodeQR && !methodCode && !fs.existsSync(`./${authFile}/creds.json`)) {
     do {
-        const red = chalk.hex('#FF0000');
-        console.clear();
-        console.log(red('╭━━━━━━━━━━━━━• 𝟕𝟖𝟕 𝐂𝐎𝐑𝐄 •━━━━━━━━━━━━━'));
-        console.log(red('  [1] MODALITÀ QR'));
-        console.log(red('  [2] MODALITÀ CODICE'));
-        console.log(red('╰━━━━━━━━━━━━━• 𝟕𝟖𝟕 𝐄𝐍𝐃 •━━━━━━━━━━━━━━━'));
-        opzione = await question(red('\n⌬ 787-auth ➤ '));
-    } while (opzione !== '1' && opzione !== '2');
+        const cyan1 = chalk.hex('#00BFFF');
+        const cyan2 = chalk.hex('#00CED1');
+        const cyan3 = chalk.hex('#20B2AA');
+        const green = chalk.hex('#2ECC71');
+        const softText = chalk.hex('#ECF0F1');
+
+        const a = cyan1('╭━━━━━━━━━━━━━• 𝟕𝟖𝟕 𝐂𝐎𝐑𝐄 •━━━━━━━━━━━━━');
+        const b = cyan1('╰━━━━━━━━━━━━━• 𝟕𝟖𝟕 𝐄𝐍𝐃 •━━━━━━━━━━━━━━━');
+        const linea = cyan2('   ─────────◈────────◈─────────◈─────────');
+        const sm = cyan3.bold('   ⚡ SISTEMA DI AUTENTICAZIONE ⚡');
+
+        const qr = cyan3(' ⌬') + ' ' + chalk.bold.white('MODALITÀ [1]: Sincronizzazione QR');
+        const codice = cyan3(' ⌬') + ' ' + chalk.bold.white('MODALITÀ [2]: Link tramite Codice');
+
+        const istruzioni = [
+            cyan3(' ❯') + softText.italic(' Inizializzazione protocollo di accesso...'),
+            cyan3(' ❯') + softText.italic(' Scegli un\'opzione per stabilire il link.'),
+            softText.italic(''),
+            cyan1.italic('                787bot by giuse'),
+        ];
+        const prompt = green.bold('\n⌬ 787-auth ➤ ');
+
+        opzione = await question(`\n
+${a}
+
+          ${sm}
+${linea}
+
+${qr}
+${codice}
+
+${linea}
+${istruzioni.join('\n')}
+
+${b}
+${prompt}`);
+    } while ((opzione !== '1' && opzione !== '2') || fs.existsSync(`./${authFile}/creds.json`));
 }
 
+const groupMetadataCache = new NodeCache({ stdTTL: 300, useClones: false });
+global.groupCache = groupMetadataCache;
 const logger = pino({ level: 'silent' });
+global.jidCache = new NodeCache({ stdTTL: 600, useClones: false });
 global.store = makeInMemoryStore({ logger });
 
+const { version } = await fetchLatestBaileysVersion();
+
 const connectionOptions = {
-    logger,
-    // FIX FONDAMENTALE: Usiamo Chrome invece di Safari per far arrivare la notifica
+    version,
+    logger: logger,
+    // FIX 1: Usiamo Chrome per Linux, Safari macOS viene spesso bloccato per il pairing push
     browser: ["Ubuntu", "Chrome", "110.0.5481.178"], 
     auth: {
         creds: state.creds,
@@ -112,6 +166,8 @@ const connectionOptions = {
     },
     printQRInTerminal: opzione === '1' || methodCodeQR,
     msgRetryCounterCache,
+    connectTimeoutMs: 60000,
+    defaultQueryTimeoutMs: 0,
 };
 
 global.conn = makeWASocket(connectionOptions);
@@ -125,22 +181,28 @@ if (!fs.existsSync(`./${authFile}/creds.json`)) {
             if (phoneNumber) {
                 addNumber = phoneNumber.replace(/[^0-9]/g, '');
             } else {
-                let input = await question(chalk.bgRed.white(' Inserisci il numero WhatsApp (es. 3934...) ') + ' ➤ ');
-                addNumber = input.replace(/\D/g, '');
+                phoneNumber = await question(chalk.bgBlack(chalk.bold.hex('#00CED1')(`Inserisci il numero di WhatsApp.\n${chalk.bold.hex('#2ECC71')("Esempio: 393471234567")}\n${chalk.bold.hex('#00BFFF')('━━► ')}`)));
+                addNumber = phoneNumber.replace(/\D/g, '');
             }
-            // FIX: Ritardo di 6 secondi per stabilizzare il socket e forzare l'invio della notifica
+            // FIX 2: Ritardo di 10 secondi. Se chiedi il codice appena il socket si apre, WhatsApp lo ignora.
+            console.log(chalk.yellow('\n[!] Stabilizzazione link... la notifica arriverà tra 10 secondi.'));
             setTimeout(async () => {
-                let codeBot = await conn.requestPairingCode(addNumber, '787BOT01');
-                codeBot = codeBot?.match(/.{1,4}/g)?.join("-") || codeBot;
-                console.log(chalk.white.bgRed('\n 📞 CODICE DI ABBINAMENTO: '), chalk.bold.red(codeBot));
-            }, 6000);
+                try {
+                    let codeBot = await conn.requestPairingCode(addNumber, '787BOT01');
+                    codeBot = codeBot?.match(/.{1,4}/g)?.join("-") || codeBot;
+                    console.log(chalk.bold.white(chalk.bgRed(' 📞 CODICE DI ABBINAMENTO: ')), chalk.bold.red(codeBot));
+                } catch (e) {
+                    console.error(chalk.red('\n[!] Errore: Prova a riavviare con Hotspot o cambia IP.'));
+                }
+            }, 10000);
         }
     }
 }
 
+// ... (Resto del codice: connectionUpdate, reloadHandler, ecc. rimangono invariati come nel tuo originale)
 async function connectionUpdate(update) {
     const { connection, lastDisconnect, qr } = update;
-    if (qr && (opzione === '1' || methodCodeQR)) console.log(chalk.yellow('\n🪐 SCANSIONA IL QR...'));
+    if (qr && (opzione === '1' || methodCodeQR)) console.log(chalk.bold.yellow(`\n 🪐 SCANSIONA IL QR 🪐`));
     if (connection === 'open') {
         console.clear();
         console.log(chalk.red.bold('\n━━━ 787 BOT ONLINE ━━━\n'));
@@ -188,11 +250,4 @@ async function filesInit() {
     }
 }
 filesInit().then(() => console.log(chalk.red('787 Plugins carichi.')));
-
 await global.reloadHandler();
-
-setInterval(async () => {
-    if (existsSync('./temp')) {
-        readdirSync('./temp').forEach(f => { try { unlinkSync(join('./temp', f)); } catch {} });
-    }
-}, 3600000);
