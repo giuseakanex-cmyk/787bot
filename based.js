@@ -27,12 +27,11 @@ const DisconnectReason = {
     forbidden: 403,
     unavailableService: 503
 };
-const { useMultiFileAuthState, makeCacheableSignalKeyStore, Browsers, jidNormalizedUser, makeInMemoryStore, fetchLatestBaileysVersion } = await import('@realvare/baileys');
+const { useMultiFileAuthState, makeCacheableSignalKeyStore, Browsers, jidNormalizedUser, makeInMemoryStore } = await import('@realvare/baileys');
 const { chain } = lodash;
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 protoType();
 serialize();
-
 global.isLogoPrinted = false;
 global.qrGenerated = false;
 global.connectionMessagesPrinted = {};
@@ -57,9 +56,18 @@ const __dirname = global.__dirname(import.meta.url);
 global.opts = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse());
 global.db = new Low(new JSONFile('database.json'));
 global.DATABASE = global.db;
-
 global.loadDatabase = async function loadDatabase() {
-    if (global.db.READ) return;
+    if (global.db.READ) {
+        return new Promise((resolve) => {
+            const interval = setInterval(() => {
+                if (!global.db.READ) {
+                    clearInterval(interval);
+                    resolve(global.db.data);
+                }
+            }, 1000);
+        });
+    }
+    if (global.db.data !== null) return;
     global.db.READ = true;
     await global.db.read().catch(console.error);
     global.db.READ = null;
@@ -71,7 +79,6 @@ loadDatabase();
 global.authFile = 'session';
 const { state, saveCreds } = await useMultiFileAuthState(global.authFile);
 const msgRetryCounterCache = new NodeCache();
-
 const question = (t) => {
     process.stdout.write(t);
     return new Promise((resolve) => {
@@ -80,17 +87,15 @@ const question = (t) => {
 };
 
 let opzione;
-if (!methodCodeQR && !methodCode && !fs.existsSync(`./${global.authFile}/creds.json`)) {
+if (!methodCodeQR && !methodCode && !fs.existsSync(`./${authFile}/creds.json`)) {
     do {
+        const red = chalk.hex('#FF0000');
         console.clear();
-        const red1 = chalk.hex('#FF0000');
-        const white = chalk.hex('#FFFFFF');
-        console.log(red1('╭━━━━━━━━━━━━━• 𝟕𝟖𝟕 𝐂𝐎𝐑𝐄 •━━━━━━━━━━━━━'));
-        console.log(white('   ⚡ SISTEMA DI AUTENTICAZIONE ⚡'));
-        console.log(red1('   1 ➤ QR CODE'));
-        console.log(red1('   2 ➤ CODICE DI ABBINAMENTO'));
-        console.log(red1('╰━━━━━━━━━━━━━• 𝟕𝟖𝟕 𝐄𝐍𝐃 •━━━━━━━━━━━━━━━'));
-        opzione = await question(red1('\n⌬ 787-auth ➤ '));
+        console.log(red('╭━━━━━━━━━━━━━• 𝟕𝟖𝟕 𝐂𝐎𝐑𝐄 •━━━━━━━━━━━━━'));
+        console.log(red('  [1] MODALITÀ QR'));
+        console.log(red('  [2] MODALITÀ CODICE'));
+        console.log(red('╰━━━━━━━━━━━━━• 𝟕𝟖𝟕 𝐄𝐍𝐃 •━━━━━━━━━━━━━━━'));
+        opzione = await question(red('\n⌬ 787-auth ➤ '));
     } while (opzione !== '1' && opzione !== '2');
 }
 
@@ -99,70 +104,54 @@ global.store = makeInMemoryStore({ logger });
 
 const connectionOptions = {
     logger,
-    browser: ["Ubuntu", "Chrome", "110.0.5481.178"], // Fix per pairing code
+    // FIX FONDAMENTALE: Usiamo Chrome invece di Safari per far arrivare la notifica
+    browser: ["Ubuntu", "Chrome", "110.0.5481.178"], 
     auth: {
         creds: state.creds,
         keys: makeCacheableSignalKeyStore(state.keys, logger),
     },
     printQRInTerminal: opzione === '1' || methodCodeQR,
     msgRetryCounterCache,
-    connectTimeoutMs: 60000,
 };
 
 global.conn = makeWASocket(connectionOptions);
 global.store.bind(global.conn.ev);
 
-// --- LOGICA PAIRING (RIBASATA) ---
-if (!fs.existsSync(`./${global.authFile}/creds.json`)) {
+if (!fs.existsSync(`./${authFile}/creds.json`)) {
     if (opzione === '2' || methodCode) {
+        opzione = '2';
         if (!conn.authState.creds.registered) {
-            let addNumber = phoneNumber ? phoneNumber.replace(/[^0-9]/g, '') : '';
-            if (!addNumber) {
-                let input = await question(chalk.bgRed.white(' Inserisci il numero (es. 39...) ') + ' ➤ ');
+            let addNumber;
+            if (phoneNumber) {
+                addNumber = phoneNumber.replace(/[^0-9]/g, '');
+            } else {
+                let input = await question(chalk.bgRed.white(' Inserisci il numero WhatsApp (es. 3934...) ') + ' ➤ ');
                 addNumber = input.replace(/\D/g, '');
             }
-            // Attesa stabilità socket per evitare errore 428
+            // FIX: Ritardo di 6 secondi per stabilizzare il socket e forzare l'invio della notifica
             setTimeout(async () => {
-                try {
-                    let codeBot = await conn.requestPairingCode(addNumber, '787BOT01');
-                    codeBot = codeBot?.match(/.{1,4}/g)?.join("-") || codeBot;
-                    console.log(chalk.bold.white(chalk.bgRed('\n 📞 CODICE DI ABBINAMENTO: ')), chalk.bold.red(codeBot));
-                } catch (e) {
-                    console.log(chalk.red('\n[!] Errore connessione. Riprova tra poco.'));
-                }
+                let codeBot = await conn.requestPairingCode(addNumber, '787BOT01');
+                codeBot = codeBot?.match(/.{1,4}/g)?.join("-") || codeBot;
+                console.log(chalk.white.bgRed('\n 📞 CODICE DI ABBINAMENTO: '), chalk.bold.red(codeBot));
             }, 6000);
         }
     }
 }
 
 async function connectionUpdate(update) {
-    const { connection, lastDisconnect, isNewLogin, qr } = update;
-    if (isNewLogin) conn.isInit = true;
-    
-    if (qr && (opzione === '1' || methodCodeQR)) {
-        console.log(chalk.bold.red(`\n 🪐 SCANSIONA IL QR 787 🪐`));
-    }
-
+    const { connection, lastDisconnect, qr } = update;
+    if (qr && (opzione === '1' || methodCodeQR)) console.log(chalk.yellow('\n🪐 SCANSIONA IL QR...'));
     if (connection === 'open') {
         console.clear();
-        const red = chalk.hex('#FF0000');
-        console.log(red.bold(`
- ███████╗ █████╗ ███████╗
- ╚════██║██╔══██╗╚════██║
-     ██╔╝╚██████║    ██╔╝ 
-    ██╔╝  ╚═══██║   ██╔╝  
-    ██║   █████╔╝   ██║   
-    ╚═╝   ╚════╝    ╚═╝   
- [ 787 SYSTEM ONLINE ]`));
+        console.log(chalk.red.bold('\n━━━ 787 BOT ONLINE ━━━\n'));
     }
-
     if (connection === 'close') {
         const reason = lastDisconnect?.error?.output?.statusCode;
-        if (reason === DisconnectReason.loggedOut) {
+        if (reason !== DisconnectReason.loggedOut) {
+            await global.reloadHandler(true).catch(console.error);
+        } else {
             rmSync(global.authFile, { recursive: true, force: true });
             process.exit(1);
-        } else {
-            await global.reloadHandler(true).catch(console.error);
         }
     }
 }
@@ -180,11 +169,9 @@ global.reloadHandler = async function (restatConn) {
         global.store.bind(global.conn.ev);
     }
     conn.handler = handler.handler.bind(global.conn);
-    conn.connectionUpdate = connectionUpdate.bind(global.conn);
-    conn.credsUpdate = saveCreds;
     conn.ev.on('messages.upsert', conn.handler);
-    conn.ev.on('connection.update', conn.connectionUpdate);
-    conn.ev.on('creds.update', conn.credsUpdate);
+    conn.ev.on('connection.update', connectionUpdate.bind(global.conn));
+    conn.ev.on('creds.update', saveCreds);
     return true;
 };
 
@@ -194,10 +181,9 @@ async function filesInit() {
     for (const filename of readdirSync(pluginFolder)) {
         if (filename.endsWith('.js')) {
             try {
-                const file = global.__filename(join(pluginFolder, filename));
-                const module = await import(file);
+                const module = await import(join(pluginFolder, filename));
                 global.plugins[filename] = module.default || module;
-            } catch (e) { delete global.plugins[filename]; }
+            } catch (e) { console.error(e); }
         }
     }
 }
@@ -207,12 +193,6 @@ await global.reloadHandler();
 
 setInterval(async () => {
     if (existsSync('./temp')) {
-        readdirSync('./temp').forEach(file => {
-            try { unlinkSync(join('./temp', file)); } catch {}
-        });
+        readdirSync('./temp').forEach(f => { try { unlinkSync(join('./temp', f)); } catch {} });
     }
 }, 3600000);
-
-watch(fileURLToPath(import.meta.url), () => {
-  console.log(chalk.bgRed(" 787 Core Aggiornato "));
-});
