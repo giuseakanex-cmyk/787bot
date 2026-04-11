@@ -9,105 +9,144 @@ import yargs from 'yargs';
 import { spawn } from 'child_process';
 import lodash from 'lodash';
 import chalk from 'chalk';
+import { format } from 'util';
 import pino from 'pino';
 import { makeWASocket, protoType, serialize } from './lib/simple.js';
 import { Low, JSONFile } from 'lowdb';
 import NodeCache from 'node-cache';
 
-const { useMultiFileAuthState, makeCacheableSignalKeyStore, jidNormalizedUser, makeInMemoryStore, fetchLatestBaileysVersion } = await import('@realvare/baileys');
+const DisconnectReason = {
+    connectionClosed: 428,
+    connectionLost: 408,
+    connectionReplaced: 440,
+    timedOut: 408,
+    loggedOut: 401,
+    badSession: 500,
+    restartRequired: 515,
+    multideviceMismatch: 411,
+    forbidden: 403,
+    unavailableService: 503
+};
+const { useMultiFileAuthState, makeCacheableSignalKeyStore, Browsers, jidNormalizedUser, makeInMemoryStore, fetchLatestBaileysVersion } = await import('@realvare/baileys');
 const { chain } = lodash;
-
+const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 protoType();
 serialize();
 
-// --- CONFIGURAZIONE CORE ---
-global.authFile = 'session';
-const logger = pino({ level: 'silent' });
-const msgRetryCounterCache = new NodeCache();
+global.isLogoPrinted = false;
+global.qrGenerated = false;
+global.connectionMessagesPrinted = {};
+let methodCodeQR = process.argv.includes("qr");
+let methodCode = process.argv.includes("code");
+let phoneNumber = global.botNumberCode;
 
-// --- UTILS PER PATH ---
 global.__filename = function filename(pathURL = import.meta.url, rmPrefix = platform !== 'win32') {
     return rmPrefix ? /file:\/\/\//.test(pathURL) ? fileURLToPath(pathURL) : pathURL : pathToFileURL(pathURL).toString();
 };
+
 global.__dirname = function dirname(pathURL) {
     return path.dirname(global.__filename(pathURL, true));
 };
-const __dirname = global.__dirname(import.meta.url);
 
-// --- DATABASE ---
+global.__require = function require(dir = import.meta.url) {
+    return createRequire(dir);
+};
+
+global.timestamp = { start: new Date };
+const __dirname = global.__dirname(import.meta.url);
+global.opts = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse());
 global.db = new Low(new JSONFile('database.json'));
+global.DATABASE = global.db;
+
 global.loadDatabase = async function loadDatabase() {
     if (global.db.READ) return;
-    await global.db.read().catch(() => {});
+    global.db.READ = true;
+    await global.db.read().catch(console.error);
+    global.db.READ = null;
     global.db.data = { users: {}, chats: {}, settings: {}, ...(global.db.data || {}) };
     global.db.chain = chain(global.db.data);
 };
-await global.loadDatabase();
+loadDatabase();
 
-// --- AUTH SYSTEM ---
+global.authFile = 'session';
 const { state, saveCreds } = await useMultiFileAuthState(global.authFile);
+const msgRetryCounterCache = new NodeCache();
+
 const question = (t) => {
     process.stdout.write(t);
-    return new Promise((resolve) => process.stdin.once('data', (data) => resolve(data.toString().trim())));
+    return new Promise((resolve) => {
+        process.stdin.once('data', (data) => resolve(data.toString().trim()));
+    });
 };
 
 let opzione;
-if (!fs.existsSync(`./${global.authFile}/creds.json`)) {
-    console.clear();
-    console.log(chalk.red.bold('\n━━━ 787 SYSTEM: SETUP ━━━'));
-    console.log(chalk.white(' [1] ➡ QR CODE\n [2] ➡ PAIRING CODE'));
-    opzione = await question(chalk.red.bold('\nSeleziona ➤ '));
+if (!methodCodeQR && !methodCode && !fs.existsSync(`./${global.authFile}/creds.json`)) {
+    do {
+        console.clear();
+        const red1 = chalk.hex('#FF0000');
+        const white = chalk.hex('#FFFFFF');
+        console.log(red1('╭━━━━━━━━━━━━━• 𝟕𝟖𝟕 𝐂𝐎𝐑𝐄 •━━━━━━━━━━━━━'));
+        console.log(white('   ⚡ SISTEMA DI AUTENTICAZIONE ⚡'));
+        console.log(red1('   1 ➤ QR CODE'));
+        console.log(red1('   2 ➤ CODICE DI ABBINAMENTO'));
+        console.log(red1('╰━━━━━━━━━━━━━• 𝟕𝟖𝟕 𝐄𝐍𝐃 •━━━━━━━━━━━━━━━'));
+        opzione = await question(red1('\n⌬ 787-auth ➤ '));
+    } while (opzione !== '1' && opzione !== '2');
 }
 
-// --- CONNESSIONE ---
-const { version } = await fetchLatestBaileysVersion();
+const logger = pino({ level: 'silent' });
+global.store = makeInMemoryStore({ logger });
 
 const connectionOptions = {
-    version,
     logger,
-    browser: ["Ubuntu", "Chrome", "110.0.5481.178"], 
+    browser: ["Ubuntu", "Chrome", "110.0.5481.178"], // Fix per pairing code
     auth: {
         creds: state.creds,
         keys: makeCacheableSignalKeyStore(state.keys, logger),
     },
-    printQRInTerminal: opzione === '1',
-    markOnlineOnConnect: true,
+    printQRInTerminal: opzione === '1' || methodCodeQR,
     msgRetryCounterCache,
     connectTimeoutMs: 60000,
-    defaultQueryTimeoutMs: 0,
 };
 
 global.conn = makeWASocket(connectionOptions);
-global.store = makeInMemoryStore({ logger });
 global.store.bind(global.conn.ev);
 
-// --- LOGICA PAIRING CODE (FIXED) ---
-if (opzione === '2' && !conn.authState.creds.registered) {
-    let num = await question(chalk.bgRed.white('\n Inserisci il numero (es. 39347...) ') + ' ➤ ');
-    num = num.replace(/\D/g, '');
-
-    console.log(chalk.yellow('\n[!] Stabilizzazione connessione... attendi 6 secondi.'));
-    
-    setTimeout(async () => {
-        try {
-            // Forza il socket a essere pronto
-            if (conn.ws.readyState !== 1) await conn.connect();
-            
-            let code = await conn.requestPairingCode(num, '787BOT01');
-            code = code?.match(/.{1,4}/g)?.join("-") || code;
-            console.log(chalk.white.bgRed('\n 🔑 CODICE PAIRING: ') + ' ' + chalk.bold.red(code) + ' \n');
-        } catch (e) {
-            console.log(chalk.red('\n[!] Errore critico. Riprova tra 30 secondi pulendo la sessione.'));
+// --- LOGICA PAIRING (RIBASATA) ---
+if (!fs.existsSync(`./${global.authFile}/creds.json`)) {
+    if (opzione === '2' || methodCode) {
+        if (!conn.authState.creds.registered) {
+            let addNumber = phoneNumber ? phoneNumber.replace(/[^0-9]/g, '') : '';
+            if (!addNumber) {
+                let input = await question(chalk.bgRed.white(' Inserisci il numero (es. 39...) ') + ' ➤ ');
+                addNumber = input.replace(/\D/g, '');
+            }
+            // Attesa stabilità socket per evitare errore 428
+            setTimeout(async () => {
+                try {
+                    let codeBot = await conn.requestPairingCode(addNumber, '787BOT01');
+                    codeBot = codeBot?.match(/.{1,4}/g)?.join("-") || codeBot;
+                    console.log(chalk.bold.white(chalk.bgRed('\n 📞 CODICE DI ABBINAMENTO: ')), chalk.bold.red(codeBot));
+                } catch (e) {
+                    console.log(chalk.red('\n[!] Errore connessione. Riprova tra poco.'));
+                }
+            }, 6000);
         }
-    }, 6000); 
+    }
 }
 
-// --- GESTORE EVENTI ---
-conn.ev.on('connection.update', async (update) => {
-    const { connection, lastDisconnect } = update;
+async function connectionUpdate(update) {
+    const { connection, lastDisconnect, isNewLogin, qr } = update;
+    if (isNewLogin) conn.isInit = true;
+    
+    if (qr && (opzione === '1' || methodCodeQR)) {
+        console.log(chalk.bold.red(`\n 🪐 SCANSIONA IL QR 787 🪐`));
+    }
+
     if (connection === 'open') {
         console.clear();
-        console.log(chalk.red.bold(`
+        const red = chalk.hex('#FF0000');
+        console.log(red.bold(`
  ███████╗ █████╗ ███████╗
  ╚════██║██╔══██╗╚════██║
      ██╔╝╚██████║    ██╔╝ 
@@ -116,45 +155,64 @@ conn.ev.on('connection.update', async (update) => {
     ╚═╝   ╚════╝    ╚═╝   
  [ 787 SYSTEM ONLINE ]`));
     }
+
     if (connection === 'close') {
         const reason = lastDisconnect?.error?.output?.statusCode;
-        if (reason === 401) {
+        if (reason === DisconnectReason.loggedOut) {
             rmSync(global.authFile, { recursive: true, force: true });
             process.exit(1);
-        }
-        process.exit(0);
-    }
-});
-
-conn.ev.on('creds.update', saveCreds);
-
-// --- CARICAMENTO HANDLER & PLUGINS ---
-let handler = await import('./handler.js');
-conn.handler = handler.handler.bind(global.conn);
-conn.ev.on('messages.upsert', conn.handler);
-
-const pluginFolder = join(__dirname, './plugins');
-global.plugins = {};
-async function loadPlugins() {
-    const files = readdirSync(pluginFolder);
-    for (const file of files) {
-        if (file.endsWith('.js')) {
-            try {
-                const module = await import(`./plugins/${file}?update=${Date.now()}`);
-                global.plugins[file] = module.default || module;
-            } catch (e) {
-                console.error(chalk.red(`Errore caricamento plugin ${file}:`), e.message);
-            }
+        } else {
+            await global.reloadHandler(true).catch(console.error);
         }
     }
 }
-loadPlugins().then(() => console.log(chalk.gray('➡ Plugin 787 pronti.')));
 
-// --- PULIZIA TEMP ---
-setInterval(() => {
+let handler = await import('./handler.js');
+global.reloadHandler = async function (restatConn) {
+    try {
+        const Handler = await import(`./handler.js?update=${Date.now()}`);
+        if (Object.keys(Handler || {}).length) handler = Handler;
+    } catch (e) { console.error(e); }
+    if (restatConn) {
+        try { global.conn.ws.close(); } catch { }
+        conn.ev.removeAllListeners();
+        global.conn = makeWASocket(connectionOptions);
+        global.store.bind(global.conn.ev);
+    }
+    conn.handler = handler.handler.bind(global.conn);
+    conn.connectionUpdate = connectionUpdate.bind(global.conn);
+    conn.credsUpdate = saveCreds;
+    conn.ev.on('messages.upsert', conn.handler);
+    conn.ev.on('connection.update', conn.connectionUpdate);
+    conn.ev.on('creds.update', conn.credsUpdate);
+    return true;
+};
+
+const pluginFolder = join(__dirname, './plugins');
+global.plugins = {};
+async function filesInit() {
+    for (const filename of readdirSync(pluginFolder)) {
+        if (filename.endsWith('.js')) {
+            try {
+                const file = global.__filename(join(pluginFolder, filename));
+                const module = await import(file);
+                global.plugins[filename] = module.default || module;
+            } catch (e) { delete global.plugins[filename]; }
+        }
+    }
+}
+filesInit().then(() => console.log(chalk.red('787 Plugins carichi.')));
+
+await global.reloadHandler();
+
+setInterval(async () => {
     if (existsSync('./temp')) {
-        readdirSync('./temp').forEach(f => {
-            try { unlinkSync(join('./temp', f)); } catch(e) {}
+        readdirSync('./temp').forEach(file => {
+            try { unlinkSync(join('./temp', file)); } catch {}
         });
     }
-}, 1000 * 60 * 60);
+}, 3600000);
+
+watch(fileURLToPath(import.meta.url), () => {
+  console.log(chalk.bgRed(" 787 Core Aggiornato "));
+});
