@@ -1,23 +1,22 @@
-/*⭑⭒━━━✦❘༻☾⋆⁺₊✧ Importazioni ✧₊⁺⋆☽༺❘✦━━━⭒⭑*/
+/*⌬ ━━━─── 𝟕 𝟖 𝟕  𝐒 𝐘 𝐒 𝐓 𝐄 𝐌  - CORE MODULE ───━━━ ⌬*/
 
 import path from 'path'
 import { promises as fs } from 'fs'
 
-/*⭑⭒━━━✦❘༻☾⋆⁺₊✧ Handler base ✧₊⁺⋆☽༺❘✦━━━⭒⭑*/
+/*⌬ ━━━─── HANDLER SYSTEM ───━━━ ⌬*/
 
 var handler = m => m
 handler.all = async function (m) {
   
-/*⭑⭒━━━✦❘༻☾⋆⁺₊✧ Dati utente globali ✧₊⁺⋆☽༺❘✦━━━⭒⭑*/
+/*⌬ ━━━─── GLOBAL DATA ───━━━ ⌬*/
 
   global.nome = conn.getName(m.sender)
   global.readMore = String.fromCharCode(8206).repeat(4001)
   global.authsticker = global.nome
   global.packsticker = global.nomepack
 
-/*⭑⭒━━━✦❘༻☾⋆⁺₊✧ Immagini ✧₊⁺⋆☽༺❘✦━━━⭒⭑*/
+/*⌬ ━━━─── MEDIA SELECTOR ───━━━ ⌬*/
 
-  // Sceglie un numero a caso tra 1 e 6 per i tuoi sticker numerati
   let numStk = Math.floor(Math.random() * 6) + 1
 
   global.foto = [
@@ -25,7 +24,7 @@ handler.all = async function (m) {
     path.join(process.cwd(), 'media', 'menu', 'menu.jpg')
   ].getRandom()
 
-/*⭑⭒━━━✦❘༻☾⋆⁺₊✧ Estetica: Thumb + Estilo ✧₊⁺⋆☽༺❘✦━━━⭒⭑*/
+/*⌬ ━━━─── SYSTEM ESTILO (ORDER MESSAGE) ───━━━ ⌬*/
 
  let zwag = await fs.readFile(global.foto)
   global.estilo = {
@@ -35,35 +34,35 @@ handler.all = async function (m) {
     },
     message: {
       orderMessage: {
-        itemCount: 67,
+        itemCount: 787, // Identificativo Sistema
         status: 0,
         surface: 1,
         message: global.nomepack,
-        orderTitle: 'js gimme my moneyyy',
+        orderTitle: '787 SYSTEM: SECURE CONNECTION',
         thumbnail: zwag,
         sellerJid: '0@s.whatsapp.net'
       }
     }
   }
 
-/*⭑⭒━━━✦❘༻☾⋆⁺₊✧ Contatto fake ✧₊⁺⋆☽༺❘✦━━━⭒⭑*/
+/*⌬ ━━━─── AUTH CONTACT FAKE ───━━━ ⌬*/
 
 global.fkontak = {
   key: {
     participant: "0@s.whatsapp.net",
     remoteJid: "status@broadcast",
     fromMe: false,
-    id: "Halo"
+    id: "787-SYS-AUTH"
   },
   message: {
     contactMessage: {
-      vcard: `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:giuse ✧ bot\nitem1.TEL;waid=0:0\nitem1.X-ABLabel:Ponsel\nEND:VCARD`
+      vcard: `BEGIN:VCARD\nVERSION:3.0\nN:787;System;;;\nFN:𝟕𝟖𝟕 𝐒𝐘𝐒𝐓𝐄𝐌\nitem1.TEL;waid=0:0\nitem1.X-ABLabel:HOST\nEND:VCARD`
     }
   },
   participant: "0@s.whatsapp.net"
 }
 
-/*⭑⭒━━━✦❘༻☾⋆⁺₊✧ Canali newsletter ✧₊⁺⋆☽༺❘✦━━━⭒⭑*/
+/*⌬ ━━━─── NETWORK CHANNELS ───━━━ ⌬*/
 
   let canale = await getRandomChannel()
   global.canaleRD = canale
@@ -89,8 +88,8 @@ global.fkontak = {
         newsletterName: canale.name
       },
       externalAdReply: {
-        title: testobot,
-        body: dev,
+        title: '𝟕𝟖𝟕 𝐒𝐘𝐒𝐓𝐄𝐌 : 𝐎𝐏𝐄𝐑𝐀𝐓𝐈𝐎𝐍𝐀𝐋',
+        body: 'Security & Performance Core',
         thumbnail: zwag,
         sourceUrl: '',
         mediaType: 1,
@@ -100,39 +99,33 @@ global.fkontak = {
   }
 }
 
-/*⭑⭒━━━✦❘༻☾⋆⁺₊✧ Canali predefiniti ✧₊⁺⋆☽༺❘✦━━━⭒⭑*/
+/*⌬ ━━━─── LOG DATABASE: CHANNELS ───━━━ ⌬*/
 
 global.IdCanale = ['120363418582531215@newsletter'] 
 global.NomeCanale = [
-  '⭒━━✧❘༻☾⋆⁺₊🩸 𝓰𝓲𝓾𝓼𝓮𝓫𝓸𝓽 🕊️₊⁺⋆☽༺❘✧━━⭒',
-  '✧⋆⁺₊❖⭑ 𝓰𝓲𝓾𝓼𝓮𝓫𝓸𝓽 ⭑❖₊⁺⋆✧',
-  '༺☾⋆⁺₊✧ 𝓰𝓲𝓾𝓼𝓮𝓫𝓸𝓽 🕊️ ✧₊⁺⋆☽༻',
-  '⋆⁺₊✦⭑彡 𝓰𝓲𝓾𝓼𝓮𝓫𝓸𝓽 彡⭑✦₊⁺⋆',
-  '⭑⭒━━━✦༻ 𝖌𝖎𝖚𝖘𝖊𝖇𝖔𝖙 ༺✦━━━⭒⭑',
-  '☁️⋆｡°✩ 𝕘𝕚𝕦𝕤𝕖𝕓𝕠𝕥 ✩°｡⋆☁️',
-  '⋆⁺₊✧༚ 𝓖𝓲𝓾𝓼𝓮𝓫𝓸𝓽 ༚✧₊⁺⋆',
-  '🌙⋆⁺₊ 𝙜𝙞𝙪𝙨𝙚𝙗𝙤𝙩 ₊⁺⋆🌙',
-  '⌜☆⌟ 𝓰𝓲𝓾𝓼𝓮𝓫𝓸𝓽 ⌞☆⌝',
-  '✧ 彡 𝘨𝘪𝘶𝘴𝘦𝘣𝘰𝘵 彡 ✧',
-  '✦ ⌈ 𝔾𝕀𝕌𝕊𝔼𝔹𝕆𝕋 ⌋ ✦',
-  '⋆⭑˚₊ 𝓖𝓲𝓾𝓼𝓮𝓫𝓸𝓽 ₊˚⭑⋆',
-  '╰⊱♡⊰╮𝓰𝓲𝓾𝓼𝓮𝓫𝓸𝓽╭⊱♡⊰╯',
-  '✿｡❀ 𓆩 𝖌𝖎𝖚𝖘𝖊𝖇𝖔𝖙 𓆪 ❀｡✿',
-  '✧･ﾟ: *✧･ﾟ:* 𝓖𝓲𝓾𝓼𝓮𝓫𝓸𝓽 *:･ﾟ✧*:･ﾟ✧',
-  '✦⭑★⭒ 𝒈𝒊𝒖𝒔𝒆𝒃𝒐𝒕 ⭒★⭑✦',
-  '˗ˏˋ ☾ 𝚐𝚒𝚞𝚜𝚎𝚋𝚘𝚝 ☽ ˎˊ˗',
+  '⌬ ━━━─── 𝟕𝟖𝟕 𝐒𝐘𝐒𝐓𝐄𝐌 ───━━━ ⌬',
+  '⌬ ❯ 𝐒𝐄𝐂𝐔𝐑𝐈𝐓𝐘 𝐂𝐎𝐍𝐓𝐑𝐎𝐋',
+  '⌬ ❯ 𝐍𝐄𝐓𝐖𝐎𝐑𝐊 𝐌𝐎𝐍𝐈𝐓𝐎𝐑',
+  '⌬ ❯ 𝐒𝐘𝐒𝐓𝐄𝐌 𝐎𝐕𝐄𝐑𝐑𝐈𝐃𝐄',
+  '⌬ ❯ 𝐀𝐔𝐓𝐎𝐌𝐀𝐓𝐄𝐃 𝐂𝐎𝐑𝐄',
+  '⌬ ❯ 𝟕𝟖𝟕 𝐇𝐎𝐒𝐓 𝐍𝐎𝐃𝐄',
+  '⌬ ❯ 𝐃𝐀𝐓𝐀 𝐄𝐍𝐂𝐑𝐘𝐏𝐓𝐈𝐎𝐍',
+  '⌬ ❯ 𝐏𝐑𝐎𝐓𝐎𝐂𝐎𝐋 𝟕𝟖𝟕',
+  '⌬ ❯ 𝐒𝐘𝐒𝐓𝐄𝐌 𝐔𝐏𝐓𝐈𝐌𝐄: 𝐎𝐍',
+  '⌬ ❯ 𝟕𝟖𝟕 𝐒𝐄𝐂𝐔𝐑𝐄 𝐋𝐈𝐍𝐊',
 ]
 
-/*⭑⭒━━━✦❘༻☾⋆⁺₊✧ Utility globali ✧₊⁺⋆☽༺❘✦━━━⭒⭑*/
+/*⌬ ━━━─── UTILITY CORE ───━━━ ⌬*/
 
 Array.prototype.getRandom = function () {
   return this[Math.floor(Math.random() * this.length)]
 }
+
 async function getRandomChannel() {
   if (!Array.isArray(global.IdCanale) || !Array.isArray(global.NomeCanale) || global.IdCanale.length === 0 || global.NomeCanale.length === 0) {
     return {
       id: '120363418582531215@newsletter',
-      name: '⭒━━✧❘༻☾⋆⁺₊🩸 𝓰𝓲𝓾𝓼𝓮𝓫𝓸𝓽 🕊️₊⁺⋆☽༺❘✧━━⭒'
+      name: '⌬ ━━━─── 𝟕𝟖𝟕 𝐒𝐘𝐒𝐓𝐄𝐌 ───━━━ ⌬'
     }
   }
   let id = global.IdCanale.getRandom()
