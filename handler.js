@@ -12,7 +12,7 @@ global.ignoredUsersGroup = {}
 global.groupSpam = {}
 global.processedWelcome = new Set() 
 
-if (!global.groupCache) global.groupCache = new NodeCache({ stdTTL: 5 * 60, useClones: false })
+if (!global.groupCache) global.groupCache = new NodeCache({ stdTTL: 300, useClones: false })
 if (!global.jidCache) global.jidCache = new NodeCache({ stdTTL: 600, useClones: false })
 if (!global.nameCache) global.nameCache = new NodeCache({ stdTTL: 600, useClones: false });
 
@@ -28,6 +28,7 @@ const fetchGroupMetadataWithRetry = async (conn, chatId, retries = 3, delay = 10
     }
 }
 
+// Listener Cache e Poll (Mantengo la logica originale)
 if (!global.cacheListenersSet) {
     const conn = global.conn
     if (conn) {
@@ -36,8 +37,7 @@ if (!global.cacheListenersSet) {
                 if (!update || !update.id) continue;
                 try {
                     const metadata = await fetchGroupMetadataWithRetry(conn, update.id)
-                    if (!metadata) continue;
-                    global.groupCache.set(update.id, metadata, { ttl: 300 })
+                    if (metadata) global.groupCache.set(update.id, metadata, { ttl: 300 })
                 } catch (e) {}
             }
         })
@@ -45,31 +45,13 @@ if (!global.cacheListenersSet) {
     }
 }
 
-if (!global.pollListenerSet) {
-    const conn = global.conn
-    if (conn) {
-        conn.ev.on('messages.update', async (chatUpdate) => {
-            for (const { key, update } of chatUpdate) {
-                if (update.pollUpdates) {
-                    try {
-                        const pollCreation = await global.store.getMessage(key)
-                        if (pollCreation) await getAggregateVotesInPollMessage({ message: pollCreation, pollUpdates: update.pollUpdates })
-                    } catch (e) {}
-                }
-            }
-        })
-        global.pollListenerSet = true
-    }
-}
-
 const isNumber = x => typeof x === 'number' && !isNaN(x)
-const delay = ms => isNumber(ms) && new Promise(resolve => setTimeout(resolve, ms))
 const responseHandlers = new Map()
 
 function initResponseHandler(conn) {
     if (!conn.waitForResponse) {
         conn.waitForResponse = async (chat, sender, options = {}) => {
-            const { timeout = 30000, validResponses = null, onTimeout = null, filter = null } = options
+            const { timeout = 30000, onTimeout = null } = options
             return new Promise((resolve) => {
                 const key = chat + sender
                 const timeoutId = setTimeout(() => {
@@ -77,16 +59,14 @@ function initResponseHandler(conn) {
                     if (onTimeout) onTimeout()
                     resolve(null)
                 }, timeout)
-                responseHandlers.set(key, { resolve, timeoutId, validResponses, filter })
+                responseHandlers.set(key, { resolve, timeoutId })
             })
         }
     }
 }
 
-global.processedCalls = global.processedCalls || new Map()
-
 // ==========================================
-// LEGAM OS - BENVENUTO E ADDIO (MINIATURA INFALLIBILE VIP)
+// 787 BOT - GESTIONE PARTECIPANTI (MINIMAL)
 // ==========================================
 export async function participantsUpdate({ id, participants, action }) {
     try {
@@ -97,409 +77,154 @@ export async function participantsUpdate({ id, participants, action }) {
 
         if (action !== 'add' && action !== 'remove') return;
 
-        console.log(chalk.bgHex('#3b0d95').white.bold(' LEGAM OS ') + chalk.yellow(` 🚨 Azione attivata: ${action} in ${id.split('@')[0]}`));
+        console.log(chalk.black.bgWhite(' 787 ') + chalk.gray(` Evento: ${action} ➡ ${id.split('@')[0]}`));
 
         if (global.opts['self']) return;
-        
         let chat = global.db.data.chats[id] || {};
-        let nomeDelBot = global.db.data.nomedelbot || `𝐿𝛴𝐺𝛬𝑀 𝛩𝑆 𝚩𝚯𝐓`;
-
         if (!chat.welcome) return;
 
         let groupMetadata = global.groupCache.get(id) || await this.groupMetadata(id).catch(_ => null) || {};
-        let groupName = groupMetadata.subject || 'Questo Gruppo';
-        let groupDesc = groupMetadata.desc ? groupMetadata.desc.toString() : 'Nessuna descrizione disponibile.';
+        let groupName = groupMetadata.subject || 'Group';
 
         for (let user of participants) {
-            
-            // 🔥 TRUCCO ANTI-CRASH: URL diretto per la miniatura quadrata infallibile
             let pp = await this.profilePictureUrl(user, 'image').catch(_ => 'https://files.catbox.moe/57bmbv.jpg');
-
             let cleanUser = user.split('@')[0];
             let text = '';
 
             if (action === 'add') {
-                let customWelcome = chat.sWelcome || `「  *BENVENUTO* 」\n𝗔𝗼 𝗮𝘁𝘁𝗲𝗻𝘁𝗼 𝗰𝗵𝗲 𝗾𝘂𝗮 𝗱𝗲𝗻𝘁𝗿𝗼 𝗳𝗮𝗻𝗻𝗼 𝗮 𝗯𝗮𝗹𝗱𝗼𝗿𝗶𝗮 𝗳𝗿𝗮𝘁è\n👤 *Utente:* @user\n🎉 *Gruppo:* @group`;
-                text = customWelcome.replace(/@user/g, `@${cleanUser}`).replace(/@group/g, groupName).replace(/@desc/g, groupDesc);
+                text = chat.sWelcome || `➡ INGRESSO\n\nUtente: @${cleanUser}\nGruppo: ${groupName}\n\n↪ Benvenuto nel sistema 787.`;
             } else if (action === 'remove') {
-                let customBye = chat.sBye || `「  *BYE BYE* 」\n👤 *Utente:* @user\n👋🏻 *𝗛𝗮 𝗹𝗮𝘀𝗰𝗶𝗮𝘁𝗼 𝗹𝗮 𝗰𝗼𝗺𝗶𝘁𝗶𝘃𝗮:* @group`;
-                text = customBye.replace(/@user/g, `@${cleanUser}`).replace(/@group/g, groupName).replace(/@desc/g, groupDesc);
+                text = chat.sBye || `↩ USCITA\n\nUtente: @${cleanUser}\nGruppo: ${groupName}\n\n↪ Connessione interrotta.`;
             }
 
             if (!text) continue;
 
-            try {
-                await this.sendMessage(id, {
-                    text: text,
-                    mentions: [user],
-                    contextInfo: {
-                        mentionedJid: [user],
-                        isForwarded: true,
-                        forwardedNewsletterMessageInfo: {
-                            newsletterJid: '120363428220415117@newsletter',
-                            serverMessageId: 100,
-                            newsletterName: nomeDelBot
-                        },
-                        externalAdReply: {
-                            title: action === 'add' ? '𝐁𝐄𝐍𝐕𝐄𝐍𝐔𝐓𝐎 👑' : '𝐀𝐃𝐃𝐈𝐎 👋🏻',
-                            body: 'Legam OS System',
-                            mediaType: 1, 
-                            renderLargerThumbnail: false,
-                            thumbnailUrl: pp,
-                            sourceUrl: '' // <-- IL LINK È STATO RIMOSSO QUI
-                        }
+            await this.sendMessage(id, {
+                text: text,
+                mentions: [user],
+                contextInfo: {
+                    mentionedJid: [user],
+                    externalAdReply: {
+                        title: action === 'add' ? '787 ➡ JOIN' : '787 ↩ LEAVE',
+                        body: 'System Status: Active',
+                        mediaType: 1, 
+                        renderLargerThumbnail: false,
+                        thumbnailUrl: pp,
+                        sourceUrl: ''
                     }
-                }); 
-                
-            } catch (err) {
-                console.error(chalk.red("[X] Errore invio Welcome/Goodbye:"), err);
-            }
+                }
+            });
         }
-    } catch (criticalError) {
-        console.error(chalk.red("[X] Errore Critico:"), criticalError);
-    }
+    } catch (e) { console.error(e) }
 }
-// ==========================================
 
+// ==========================================
+// HANDLER PRINCIPALE
+// ==========================================
 export async function handler(chatUpdate) {
     this.msgqueque = this.msgqueque || []
-    this.uptime = this.uptime || Date.now()
     if (!chatUpdate) return
     this.pushMessage(chatUpdate.messages).catch(console.error)
-    
     let m = chatUpdate.messages[chatUpdate.messages.length - 1]
     if (!m) return
 
     if (m.message?.protocolMessage?.type === 'MESSAGE_EDIT') {
-        const key = m.message.protocolMessage.key;
-        const editedMessage = m.message.protocolMessage.editedMessage;
-        m.key = key;
-        m.message = editedMessage;
+        m.key = m.message.protocolMessage.key;
+        m.message = m.message.protocolMessage.editedMessage;
     }
 
     m = smsg(this, m, global.store)
     if (!m || !m.key || !m.chat || !m.sender) return
 
+    // Gestione StubType per add/remove
     if (m.messageStubType && m.isGroup) {
-        let actionTrigger = '';
-        if (m.messageStubType === 27) actionTrigger = 'add';
-        else if (m.messageStubType === 28 || m.messageStubType === 32) actionTrigger = 'remove';
-
+        let actionTrigger = m.messageStubType === 27 ? 'add' : (m.messageStubType === 28 || m.messageStubType === 32 ? 'remove' : '');
         if (actionTrigger) {
-            let who = m.messageStubParameters[0];
-            if (who) {
-                participantsUpdate.call(this, {
-                    id: m.chat,
-                    participants: [who],
-                    action: actionTrigger
-                });
-            }
+            participantsUpdate.call(this, { id: m.chat, participants: [m.messageStubParameters[0]], action: actionTrigger });
         }
     }
-    
-    if (m.key.participant && m.key.participant.includes(':') && m.key.participant.split(':')[1]?.includes('@')) return
 
-    if (m.key) {
-        m.key.remoteJid = this.decodeJid(m.key.remoteJid)
-        if (m.key.participant) m.key.participant = this.decodeJid(m.key.participant)
-    }
+    if (m.key.participant?.includes(':')) return
+    if (m.key) m.key.remoteJid = this.decodeJid(m.key.remoteJid)
     if (!m.key.remoteJid) return
     
+    // Estrazione testo (Bottoni/Messaggi)
     let extractedText = m.message?.conversation || m.message?.extendedTextMessage?.text || '';
-    
     if (m.message?.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson) {
-        try {
-            let params = JSON.parse(m.message.interactiveResponseMessage.nativeFlowResponseMessage.paramsJson);
-            if (params.id) extractedText = params.id;
-        } catch (e) {}
-    } else if (m.message?.templateButtonReplyMessage?.selectedId) {
-        extractedText = m.message.templateButtonReplyMessage.selectedId;
-    } else if (m.message?.buttonsResponseMessage?.selectedButtonId) {
-        extractedText = m.message.buttonsResponseMessage.selectedButtonId;
-    } else if (m.message?.listResponseMessage?.singleSelectReply?.selectedRowId) {
-        extractedText = m.message.listResponseMessage.singleSelectReply.selectedRowId;
+        try { extractedText = JSON.parse(m.message.interactiveResponseMessage.nativeFlowResponseMessage.paramsJson).id; } catch (e) {}
     }
-
-    if (extractedText) {
-        m.text = extractedText;
-    }
+    if (extractedText) m.text = extractedText;
 
     initResponseHandler(this)
 
-    let user = null
-    let chat = null
-    let usedPrefix = null
-    let normalizedSender = null
-    let normalizedBot = null
-
     try {
         if (!global.db.data) await global.loadDatabase()
-        m.exp = 0
-        m.euro = false
-        m.isCommand = false
+        let normalizedSender = this.decodeJid(m.sender)
+        
+        let user = global.db.data.users[normalizedSender] || (global.db.data.users[normalizedSender] = { euro: 10, banned: false, name: m.pushName || 'User' })
+        let chat = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = { isBanned: false, welcome: false, modoadmin: false })
+        let settings = global.db.data.settings[this.user.jid] || (global.db.data.settings[this.user.jid] = { antiPrivate: true })
 
-        normalizedSender = this.decodeJid(m.sender)
-        normalizedBot = this.decodeJid(this.user.jid)
-        if (!normalizedSender) return;
-        
-        user = global.db.data.users[normalizedSender] || (global.db.data.users[normalizedSender] = {
-            exp: 0, euro: 10, muto: false, registered: false, name: m.pushName || '?',
-            age: -1, regTime: -1, banned: false, bank: 0, level: 0, firstTime: Date.now(), spam: 0
-        })
-        chat = global.db.data.chats[m.chat] || (global.db.data.chats[m.chat] = {
-            isBanned: false, welcome: false, goodbye: false, ai: false, vocali: false,
-            antiporno: false, antioneview: false, autolevelup: false, antivoip: false,
-            rileva: false, modoadmin: false, antiLink: false, antiLink2: false,
-            reaction: false, antispam: false, expired: 0, users: {}, sWelcome: '', sBye: ''
-        })
-        let settings = global.db.data.settings[this.user.jid] || (global.db.data.settings[this.user.jid] = {
-            autoread: false, jadibotmd: false, antiPrivate: true, soloCreatore: false, status: 0
-        })
-
-        if (m.mtype === 'pollUpdateMessage') return
-        if (m.mtype === 'reactionMessage') return
-        
-        let groupMetadata = m.isGroup ? global.groupCache.get(m.chat) : null
-        let participants = null
-        let isBotAdmin = false
-        let isAdmin = false
-        
-        let isGiuse = global.owner.some(([num]) => num + '@s.whatsapp.net' === normalizedSender)
-        let isROwner = isGiuse || global.owner.some(([num]) => num + '@s.whatsapp.net' === normalizedSender)
-        let isOwner = isROwner || m.fromMe
-        
-        let isGlobalMod = global.mods?.map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(normalizedSender) || false
-        let isGlobalPrem = global.prems?.map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(normalizedSender) || false
-
-        let isGroupMod = m.isGroup && user && user.premium === true && user.premiumGroup === m.chat
-        
-        let isMods = isOwner || isGlobalMod || isGroupMod || false
-        let isPrems = isROwner || isGlobalPrem || isGroupMod || false
-        
-        if (m.isGroup) {
-            if (!groupMetadata) {
-                groupMetadata = await fetchGroupMetadataWithRetry(this, m.chat)
-                if (groupMetadata) {
-                    groupMetadata.fetchTime = Date.now()
-                    global.groupCache.set(m.chat, groupMetadata, { ttl: 300 })
-                }
-            }
-            if (groupMetadata) {
-                participants = groupMetadata.participants
-                isAdmin = participants.some(u => {
-                    const participantIds = [this.decodeJid(u.id), u.jid ? this.decodeJid(u.jid) : null, u.lid ? this.decodeJid(u.lid) : null].filter(Boolean)
-                    return participantIds.includes(normalizedSender) && (u.admin === 'admin' || u.admin === 'superadmin' || u.isAdmin === true || u.admin === true)
-                })
-
-                isBotAdmin = participants.some(u => {
-                    const participantIds = [this.decodeJid(u.id), u.jid ? this.decodeJid(u.jid) : null, u.lid ? this.decodeJid(u.lid) : null].filter(Boolean)
-                    return participantIds.includes(normalizedBot) && (u.admin === 'admin' || u.admin === 'superadmin' || u.isAdmin === true || u.admin === true)
-                })
-            }
+        // Log Console Minimalista
+        if (m.text && !m.messageStubType) {
+            let orario = new Date().toLocaleTimeString('it-IT');
+            let isCmd = /^[.#!\\/]/.test(m.text.trim());
+            console.log(
+                chalk.black.bgWhite(' 787 ') + ' ' +
+                chalk.gray(`[${orario}]`) + ' ' +
+                (isCmd ? chalk.white.bold(`[CMD] `) : chalk.gray(`[MSG] `)) + 
+                chalk.white(`${m.pushName || 'Guest'} ➡ `) + 
+                chalk.cyan(m.text.substring(0, 30))
+            );
         }
 
-        if (m.text || m.mtype) {
-            let testoLog = m.text || `[Media: ${m.mtype}]`;
-            if (!m.messageStubType) {
-                let tipoChat = m.isGroup ? 'Gruppo' : 'Privato';
-                let nomeUtente = m.pushName || 'Sconosciuto';
-                let numero = normalizedSender ? normalizedSender.split('@')[0] : 'Sconosciuto';
-                let orario = new Date().toLocaleTimeString('it-IT');
-                
-                let ruolo = chalk.gray('[👤 UTENTE]');
-                if (isOwner) ruolo = chalk.magenta.bold('[👑 OWNER]');
-                else if (isMods) ruolo = chalk.green.bold('[🛡️ MOD]');
-                else if (isAdmin) ruolo = chalk.blue.bold('[⭐ ADMIN]');
-                else if (isPrems) ruolo = chalk.yellow.bold('[💎 VIP]');
-
-                let isCmd = m.text && /^[.#!\\/]/.test(m.text.trim());
-                let testoColorato = isCmd ? chalk.yellowBright.bold(testoLog) : chalk.white(testoLog);
-
-                console.log(
-                    chalk.bgHex('#3b0d95').white.bold(' LEGAM OS ') + ' ' +
-                    chalk.gray(`[${orario}]`) + ' ' +
-                    chalk.cyan(`[${tipoChat}]`) + ' ' +
-                    ruolo + ' ' +
-                    chalk.green(`${nomeUtente} `) + chalk.gray(`(${numero}) > `) +
-                    testoColorato
-                );
-            }
-        }
-
-        const ___dirname = join(path.dirname(fileURLToPath(import.meta.url)), './plugins')
-        
+        // Plugin Loop
         for (let name in global.plugins) {
             let plugin = global.plugins[name]
-            if (!plugin) continue
-            if (typeof plugin.before === 'function') {
-                try {
-                    await plugin.before.call(this, m, {
-                        conn: this, participants, isGiuse, isOwner, isMods, isAdmin, isBotAdmin, isPrems 
-                    })
-                } catch (e) {
-                    console.error(`[ERRORE INTERCETTATORE] Plugin ${name}:`, e)
-                }
-            }
-        }
-
-        for (let name in global.plugins) {
-            let plugin = global.plugins[name]
-            if (!plugin) continue
+            if (!plugin || plugin.disabled) continue
 
             const str2Regex = str => str.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
             let _prefix = plugin.customPrefix || global.prefix || '.'
             let match = (_prefix instanceof RegExp ? [[_prefix.exec(m.text), _prefix]] :
                 Array.isArray(_prefix) ? _prefix.map(p => [p instanceof RegExp ? p : new RegExp(str2Regex(p)).exec(m.text), p]) :
-                typeof _prefix === 'string' ? [[new RegExp(str2Regex(_prefix)).exec(m.text), _prefix]] :
-                [[[], new RegExp]]).find(p => p[1])
+                typeof _prefix === 'string' ? [[new RegExp(str2Regex(_prefix)).exec(m.text), _prefix]] : [[[], new RegExp]]).find(p => p[1])
 
             if (!match || !match[0]) continue
-
-            usedPrefix = (match[0] || '')[0]
+            let usedPrefix = (match[0] || '')[0]
+            
             if (usedPrefix) {
                 let noPrefix = m.text.replace(usedPrefix, '').trim()
                 let [command, ...args] = noPrefix.split(/\s+/).filter(v => v)
-                args = args || []
-                let _args = noPrefix.trim().split` `.slice(1)
-                let text = _args.join` `
                 command = command?.toLowerCase() || ''
-                let fail = plugin.fail || global.dfail
+                
                 let isAccept = plugin.command instanceof RegExp ? plugin.command.test(command) :
-                    Array.isArray(plugin.command) ? plugin.command.some(cmd => cmd instanceof RegExp ? cmd.test(command) : cmd === command) :
+                    Array.isArray(plugin.command) ? plugin.command.some(cmd => cmd === command) :
                     typeof plugin.command === 'string' ? plugin.command === command : false
 
                 if (!isAccept) continue
 
-                if (m.isGroup && (plugin.admin || plugin.botAdmin)) {
-                    const freshMetadata = global.groupCache.get(m.chat) || await fetchGroupMetadataWithRetry(this, m.chat)
-                    if (freshMetadata) {
-                        freshMetadata.fetchTime = Date.now()
-                        global.groupCache.set(m.chat, freshMetadata, { ttl: 300 })
-                        participants = freshMetadata.participants
-
-                        isAdmin = participants.some(u => {
-                            const participantIds = [this.decodeJid(u.id), u.jid ? this.decodeJid(u.jid) : null, u.lid ? this.decodeJid(u.lid) : null].filter(Boolean)
-                            return participantIds.includes(normalizedSender) && (u.admin === 'admin' || u.admin === 'superadmin' || u.isAdmin || u.admin)
-                        })
-                        if (isOwner) isAdmin = true;
-
-                        isBotAdmin = participants.some(u => {
-                            const participantIds = [this.decodeJid(u.id), u.jid ? this.decodeJid(u.jid) : null, u.lid ? this.decodeJid(u.lid) : null].filter(Boolean)
-                            return participantIds.includes(normalizedBot) && (u.admin === 'admin' || u.admin === 'superadmin' || u.isAdmin || u.admin)
-                        })
-                    }
-                }
-                
-                // MODOADMIN: Se attivato, solo Admin, Mod e Owner possono usare il bot in questo gruppo.
-                if (m.isGroup && chat.modoadmin && !isAdmin && !isOwner && !isROwner && !isMods) continue;
-                
-                if (settings.soloCreatore && !isROwner && !isOwner) continue;
-                if (chat.isBanned && !isROwner && !isOwner && !isMods) continue;
-
-                if (user.banned && !isROwner && !isOwner) {
-                    if (user.antispam < 2) {
-                        await this.sendMessage(m.chat, { text: `🚫 *Sei stato bannato dall'utilizzo del Legam OS.*` }, { quoted: m });
-                        user.antispam++;
-                    }
-                    continue;
-                }
-
-                if (user.muto && !isROwner && !isOwner && !isMods) {
-                    await this.sendMessage(m.chat, { text: `🚫 Non puoi usare i comandi se sei stato mutato!` }, { quoted: m });
-                    continue; 
-                }
-
-                if (global.gpMutaSmuta && global.gpMutaSmuta.mutedUsers) {
-                    let normId = global.gpMutaSmuta.normalizeId(this.decodeJid(m.sender));
-                    if (global.gpMutaSmuta.mutedUsers.has(normId) && !isROwner && !isOwner && !isMods) {
-                        continue;
-                    }
-                }
-
-                if (m.isGroup && !isOwner && !isROwner && !isAdmin && !isMods && chat.antispam) {
-                    const groupData = global.groupSpam[m.chat] || (global.groupSpam[m.chat] = { count: 0, firstCommandTimestamp: 0, isSuspended: false });
-                    const now = Date.now();
-                    if (groupData.isSuspended) continue;
-
-                    if (now - groupData.firstCommandTimestamp > 60000) {
-                        groupData.count = 1;
-                        groupData.firstCommandTimestamp = now;
-                    } else {
-                        groupData.count++;
-                    }
-
-                    if (groupData.count > 8) {
-                        groupData.isSuspended = true;
-                        await this.reply(m.chat, `⚠️  \`Anti-spam comandi\`\nRilevati troppi comandi. Attendi 15 secondi prima di riprovare.`, m);
-                        setTimeout(() => { delete global.groupSpam[m.chat] }, 15000);
-                        continue;
-                    }
-                }
-
-                if (plugin.disabled && !isOwner) { fail('disabled', m, this); continue }
-
-                m.plugin = name
-                m.isCommand = true
-
-                let requiresCreator = plugin.giuse || plugin.sam;
-                if (requiresCreator && !isGiuse) { fail('rowner', m, this); continue }
-                
-                if (plugin.owner && !isOwner) { fail('owner', m, this); continue }
-                if (plugin.mods && !isMods) { fail('mods', m, this); continue } 
-                if (plugin.premium && !isPrems) { fail('premium', m, this); continue } 
-                if (plugin.group && !m.isGroup) { fail('group', m, this); continue }
-                
-                // 🛡️ FIX SICUREZZA: I moderatori NON possono più usare i comandi degli Admin del gruppo (a meno che non lo siano davvero)
-                if (plugin.admin && !isAdmin && !isOwner) { fail('admin', m, this); continue }
-                
-                if (plugin.botAdmin && !isBotAdmin) { fail('botAdmin', m, this); continue }
+                // Check Permessi Minimal
+                let isOwner = global.owner.some(([num]) => num + '@s.whatsapp.net' === normalizedSender) || m.fromMe
+                if (plugin.owner && !isOwner) { global.dfail('owner', m, this); continue }
+                if (plugin.group && !m.isGroup) { global.dfail('group', m, this); continue }
 
                 try {
-                    await plugin.call(this, m, {
-                        match, usedPrefix, noPrefix, args, command, text, conn: this, participants,
-                        isGiuse, isOwner, isMods, isAdmin, isBotAdmin, isPrems 
-                    })
-                    if (plugin.euro) user.euro -= plugin.euro
+                    await plugin.call(this, m, { match, usedPrefix, noPrefix, args, command, text: args.join(' '), conn: this, isOwner })
                 } catch (e) {
-                    console.error(`[ERRORE] Plugin ${name}:`, e)
-                    m.reply(`『 ⚠️ 』 \`Errore:\`\n${String(e)}`)
+                    m.reply(`➡ ERROR\n\n↪ ${String(e)}`)
                 }
                 break 
             }
         }
-    } catch (e) {
-        console.error(`[ERRORE GLOBALE]`, e)
-    } finally {
-        if (m && user) {
-            user.exp += m.exp || 0
-            user.euro -= m.euro * 1 || 0
-        }
-        let settingsREAD = global.db.data.settings[this.user.jid] || {}
-        if ((global.opts['autoread'] || settingsREAD.autoread2) && m) {
-            await this.readMessages([m.key])
-        }
-    }
+    } catch (e) { console.error(e) }
 }
 
 global.dfail = async (type, m, conn) => {
     const msg = {
-        rowner:   '『 𝐋𝐄𝐆𝐀𝐌 𝐎𝐒 — 𝐎𝐖𝐍𝐄𝐑 』\n\n👑 *RANGO INSUFFICIENTE*\n╰➤ *Richiesto:* Owner Fondatore\n\n⚡ _Solo chi ha dato vita al bot può evocare questo potere._',
-        owner:    '『 𝐋𝐄𝐆𝐀𝐌 𝐎𝐒 — 𝐀𝐔𝐓𝐇 』\n\n🛡️ *MODALITÀ OWNER*\n╰➤ *Stato:* Accesso Riservato\n\n💎 _Comando sbloccabile solo dagli sviluppatori autorizzati._',
-        premium:  '『 𝐋𝐄𝐆𝐀𝐌 𝐎𝐒 — 𝐏𝐑𝐄𝐌𝐈𝐔𝐌 』\n\n💎 *CONTENUTO ESCLUSIVO*\n╰➤ *Vantaggio:* Utente Elite\n\n✨ _Passa a Premium per sbloccare funzioni avanzate e limiti rimossi!_',
-        group:    '『 𝐋𝐄𝐆𝐀𝐌 𝐎𝐒 — 𝐋𝐎𝐂𝐀𝐓𝐈𝐎𝐍 』\n\n👥 *RIVELATO ERRORE*\n╰➤ *Ambiente:* Solo Gruppi\n\n📍 _Per favore, esegui questo comando all\'interno di una Community._',
-        admin:    '『 𝐋𝐄𝐆𝐀𝐌 𝐎𝐒 — 𝐆𝐑𝐎𝐔𝐏 』\n\n🛠️ *AZIONE ADMIN*\n╰➤ *Requisito:* Amministratore\n\n🚫 _Non hai i gradi necessari per gestire questa operazione._',
-        botAdmin: '『 𝐋𝐄𝐆𝐀𝐌 𝐎𝐒 — 𝐏𝐄𝐑𝐌𝐈𝐒𝐒𝐈 』\n\n🤖 *ERRORE DI SISTEMA*\n╰➤ *Problema:* Bot non Admin\n\n💠 _Promuovimi ad Admin per permettermi di agire correttamente._'
+        owner:   '➡ ACCESSO NEGATO\n↪ Richiesto: Owner',
+        group:   '➡ ERRORE AMBIENTE\n↪ Eseguire in: Gruppo',
+        admin:   '➡ PERMESSI INSUFFICIENTI\n↪ Richiesto: Admin',
+        botAdmin: '➡ CONFIGURAZIONE ERRATA\n↪ Requisito: Bot Admin'
     }[type]
-
-    if (msg) {
-        conn.reply(m.chat, msg + '\n\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦', m).catch(e => console.error('[ERRORE] Errore in dfail:', e))
-    }
+    if (msg) conn.reply(m.chat, msg, m)
 }
-
-let file = global.__filename(import.meta.url, true)
-watchFile(file, async () => { 
-    unwatchFile(file)     
-    console.log(chalk.bgHex('#3b0d95')(chalk.white.bold("File: 'handler.js' Aggiornato")))
-})
-
-
