@@ -27,7 +27,7 @@ const DisconnectReason = {
     forbidden: 403,
     unavailableService: 503
 };
-const { useMultiFileAuthState, makeCacheableSignalKeyStore, Browsers, jidNormalizedUser, makeInMemoryStore, fetchLatestBaileysVersion } = await import('@realvare/baileys');
+const { useMultiFileAuthState, makeCacheableSignalKeyStore, Browsers, jidNormalizedUser, makeInMemoryStore } = await import('@realvare/baileys');
 const { chain } = lodash;
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 protoType();
@@ -108,42 +108,20 @@ const question = (t) => {
 let opzione;
 if (!methodCodeQR && !methodCode && !fs.existsSync(`./${authFile}/creds.json`)) {
     do {
-        const cyan1 = chalk.hex('#00BFFF');
-        const cyan2 = chalk.hex('#00CED1');
-        const cyan3 = chalk.hex('#20B2AA');
-        const green = chalk.hex('#2ECC71');
-        const softText = chalk.hex('#ECF0F1');
-
-        const a = cyan1('╭━━━━━━━━━━━━━• 𝟕𝟖𝟕 𝐂𝐎𝐑𝐄 •━━━━━━━━━━━━━');
-        const b = cyan1('╰━━━━━━━━━━━━━• 𝟕𝟖𝟕 𝐄𝐍𝐃 •━━━━━━━━━━━━━━━');
-        const linea = cyan2('   ─────────◈────────◈─────────◈─────────');
-        const sm = cyan3.bold('   ⚡ SISTEMA DI AUTENTICAZIONE ⚡');
-
-        const qr = cyan3(' ⌬') + ' ' + chalk.bold.white('MODALITÀ [1]: Sincronizzazione QR');
-        const codice = cyan3(' ⌬') + ' ' + chalk.bold.white('MODALITÀ [2]: Link tramite Codice');
-
-        const istruzioni = [
-            cyan3(' ❯') + softText.italic(' Inizializzazione protocollo di accesso...'),
-            cyan3(' ❯') + softText.italic(' Scegli un\'opzione per stabilire il link.'),
-            softText.italic(''),
-            cyan1.italic('                787bot by giuse'),
-        ];
-        const prompt = green.bold('\n⌬ 787-auth ➤ ');
+        const red1 = chalk.hex('#FF0000');
+        const white = chalk.hex('#FFFFFF');
+        const linea = red1('   ─────────◈────────◈─────────◈─────────');
 
         opzione = await question(`\n
-${a}
-
-          ${sm}
+${red1('╭━━━━━━━━━━━━━• 𝟕𝟖𝟕 𝐂𝐎𝐑𝐄 •━━━━━━━━━━━━━')}
+          ${white.bold('⚡ SISTEMA DI ACCESSO ⚡')}
 ${linea}
-
-${qr}
-${codice}
-
+${white(' [1] QR CODE')}
+${white(' [2] PAIRING CODE')}
 ${linea}
-${istruzioni.join('\n')}
+${red1('╰━━━━━━━━━━━━━• 𝟕𝟖𝟕 𝐄𝐍𝐃 •━━━━━━━━━━━━━━━')}
+${red1.bold('\n⌬ 787-auth ➤ ')}`);
 
-${b}
-${prompt}`);
     } while ((opzione !== '1' && opzione !== '2') || fs.existsSync(`./${authFile}/creds.json`));
 }
 
@@ -153,21 +131,28 @@ const logger = pino({ level: 'silent' });
 global.jidCache = new NodeCache({ stdTTL: 600, useClones: false });
 global.store = makeInMemoryStore({ logger });
 
-const { version } = await fetchLatestBaileysVersion();
+const makeDecodeJid = (jidCache) => {
+    return (jid) => {
+        if (!jid) return jid;
+        const cached = jidCache.get(jid);
+        if (cached) return cached;
+        let decoded = jid;
+        if (/:\d+@/gi.test(jid)) decoded = jidNormalizedUser(jid);
+        jidCache.set(jid, decoded);
+        return decoded;
+    };
+};
 
 const connectionOptions = {
-    version,
     logger: logger,
-    // FIX 1: Usiamo Chrome per Linux, Safari macOS viene spesso bloccato per il pairing push
-    browser: ["Ubuntu", "Chrome", "110.0.5481.178"], 
+    browser: Browsers.macOS('Safari'),
     auth: {
         creds: state.creds,
         keys: makeCacheableSignalKeyStore(state.keys, logger),
     },
-    printQRInTerminal: opzione === '1' || methodCodeQR,
+    decodeJid: makeDecodeJid(global.jidCache),
+    printQRInTerminal: opzione === '1' || methodCodeQR ? true : false,
     msgRetryCounterCache,
-    connectTimeoutMs: 60000,
-    defaultQueryTimeoutMs: 0,
 };
 
 global.conn = makeWASocket(connectionOptions);
@@ -181,28 +166,21 @@ if (!fs.existsSync(`./${authFile}/creds.json`)) {
             if (phoneNumber) {
                 addNumber = phoneNumber.replace(/[^0-9]/g, '');
             } else {
-                phoneNumber = await question(chalk.bgBlack(chalk.bold.hex('#00CED1')(`Inserisci il numero di WhatsApp.\n${chalk.bold.hex('#2ECC71')("Esempio: 393471234567")}\n${chalk.bold.hex('#00BFFF')('━━► ')}`)));
-                addNumber = phoneNumber.replace(/\D/g, '');
+                let input = await question(chalk.bgRed.white(' Inserisci il numero (es. 39...) ') + ' ➤ ');
+                addNumber = input.replace(/\D/g, '');
             }
-            // FIX 2: Ritardo di 10 secondi. Se chiedi il codice appena il socket si apre, WhatsApp lo ignora.
-            console.log(chalk.yellow('\n[!] Stabilizzazione link... la notifica arriverà tra 10 secondi.'));
             setTimeout(async () => {
-                try {
-                    let codeBot = await conn.requestPairingCode(addNumber, '787BOT01');
-                    codeBot = codeBot?.match(/.{1,4}/g)?.join("-") || codeBot;
-                    console.log(chalk.bold.white(chalk.bgRed(' 📞 CODICE DI ABBINAMENTO: ')), chalk.bold.red(codeBot));
-                } catch (e) {
-                    console.error(chalk.red('\n[!] Errore: Prova a riavviare con Hotspot o cambia IP.'));
-                }
-            }, 10000);
+                let codeBot = await conn.requestPairingCode(addNumber, '787BOT01');
+                codeBot = codeBot?.match(/.{1,4}/g)?.join("-") || codeBot;
+                console.log(chalk.bold.white(chalk.bgRed(' 📞 CODICE DI ABBINAMENTO: ')), chalk.bold.red(codeBot));
+            }, 3000);
         }
     }
 }
 
-// ... (Resto del codice: connectionUpdate, reloadHandler, ecc. rimangono invariati come nel tuo originale)
 async function connectionUpdate(update) {
     const { connection, lastDisconnect, qr } = update;
-    if (qr && (opzione === '1' || methodCodeQR)) console.log(chalk.bold.yellow(`\n 🪐 SCANSIONA IL QR 🪐`));
+    if (qr && (opzione === '1' || methodCodeQR)) console.log(chalk.red('\n🪐 SCANSIONA IL QR...'));
     if (connection === 'open') {
         console.clear();
         console.log(chalk.red.bold('\n━━━ 787 BOT ONLINE ━━━\n'));
@@ -237,17 +215,16 @@ global.reloadHandler = async function (restatConn) {
     return true;
 };
 
-const pluginFolder = join(__dirname, './plugins');
+const pluginFolder = global.__dirname(join(__dirname, './plugins/index'));
+const pluginFilter = (filename) => /\.js$/.test(filename);
 global.plugins = {};
 async function filesInit() {
-    for (const filename of readdirSync(pluginFolder)) {
-        if (filename.endsWith('.js')) {
-            try {
-                const module = await import(join(pluginFolder, filename));
-                global.plugins[filename] = module.default || module;
-            } catch (e) { console.error(e); }
-        }
+    for (const filename of readdirSync(pluginFolder).filter(pluginFilter)) {
+        try {
+            const file = global.__filename(join(pluginFolder, filename));
+            const module = await import(file);
+            global.plugins[filename] = module.default || module;
+        } catch (e) { console.error(e); }
     }
 }
-filesInit().then(() => console.log(chalk.red('787 Plugins carichi.')));
-await global.reloadHandler();
+filesInit().then(() => console.
