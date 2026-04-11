@@ -1,4 +1,3 @@
-
 import os from 'os';
 import { performance } from 'perf_hooks';
 
@@ -13,24 +12,28 @@ let handler = async (m, { conn, usedPrefix }) => {
     const ramBot = (process.memoryUsage().rss / 1024 / 1024).toFixed(2);
 
     const textMsg = `
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦
-·   𝐋 𝐄 𝐆 𝐀 𝐌  𝐁 𝐎 𝐓   ·
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦
+⌬ ━━━──  𝟕 𝟖 𝟕  𝐒 𝐘 𝐒 𝐓 𝐄 𝐌  ──━━━ ⌬
 
-· 𝐏𝐢𝐧𝐠 ➻ ${latenza} ms
-· 𝐔𝐩𝐭𝐢𝐦𝐞 ➻ ${uptimeStr}
-· 𝐑𝐀𝐌 ➻ ${ramBot} MB
+█ ⚡ **LATENZA** ↳ Protocollo: ${latenza} ms
 
-👑 𝐎𝐖𝐍𝐄𝐑 ➤ 𝐆𝐈𝐔𝐒𝚵
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`.trim();
+█ ⏳ **RUNTIME**
+↳ Attivo da: ${uptimeStr}
+
+█ 🧠 **RESOURCES**
+↳ RAM: ${ramBot} MB
+
+█ 👑 **AUTHORITY**
+↳ Root: GIUSE
+
+⌬ ━━━──  𝐒𝐘𝐒𝐓𝐄𝐌 𝐎𝐕𝐄𝐑𝐑𝐈𝐃𝐄  ──━━━ ⌬`.trim();
 
     await conn.sendMessage(m.chat, {
       text: textMsg,
-      footer: "✧ 𝐋 𝐄 𝐆 𝐀 𝐌  𝐎 𝐒 ✧",
+      footer: "Powered by 787-Core Engine",
       buttons: [
-        { buttonId: usedPrefix + "stats", buttonText: { displayText: "📊 𝐒𝐭𝐚𝐭𝐬" }, type: 1 },
-        { buttonId: usedPrefix + "menu", buttonText: { displayText: "✧𝐌𝐞𝐧𝐮✧" }, type: 1 },
-        { buttonId: usedPrefix + "ds", buttonText: { displayText: "🗑️ 𝐒𝐯𝐮𝐨𝐭𝐚 𝐒𝐞𝐬𝐬𝐢𝐨𝐧𝐢" }, type: 1 }
+        { buttonId: usedPrefix + "stats", buttonText: { displayText: "📊 STATS" }, type: 1 },
+        { buttonId: usedPrefix + "menu", buttonText: { displayText: "⌬ MENU" }, type: 1 },
+        { buttonId: usedPrefix + "ds", buttonText: { displayText: "🗑️ CLEAR SESSION" }, type: 1 }
       ],
       headerType: 1,
       contextInfo: {
@@ -38,7 +41,7 @@ let handler = async (m, { conn, usedPrefix }) => {
         isForwarded: true,
         forwardedNewsletterMessageInfo: {
           newsletterJid: '120363233544482011@newsletter',
-          newsletterName: "✨.✦★彡 𝐋𝐞𝐠𝐚𝐦 𝐎𝐒 𝐏𝐢𝐧𝐠 Ξ★✦.•",
+          newsletterName: "𝟕𝟖𝟕 𝐒𝐘𝐒𝐓𝐄𝐌: 𝐎𝐕𝐄𝐑𝐑𝐈𝐃𝐄",
           serverMessageId: 100
         }
       }
@@ -46,7 +49,7 @@ let handler = async (m, { conn, usedPrefix }) => {
 
   } catch (err) {
     console.error(err);
-    m.reply("❌ `Errore di calcolo.`");
+    m.reply("⌬ ❯ `SYSTEM_FAILURE: CALCULATION_ERROR` ");
   }
 };
 
@@ -60,7 +63,6 @@ function clockString(ms) {
 
 handler.help = ['ping'];
 handler.tags = ['info'];
-// 🔥 FIX: Rimosso il |p, ora intercetta SOLO "ping"!
 handler.command = /^(ping)$/i;
 
 export default handler;
