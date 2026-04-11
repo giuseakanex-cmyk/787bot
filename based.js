@@ -59,16 +59,7 @@ global.opts = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse()
 global.db = new Low(new JSONFile('database.json'));
 
 global.loadDatabase = async function loadDatabase() {
-    if (global.db.READ) {
-        return new Promise((resolve) => {
-            const interval = setInterval(() => {
-                if (!global.db.READ) {
-                    clearInterval(interval);
-                    resolve(global.db.data);
-                }
-            }, 1000);
-        });
-    }
+    if (global.db.READ) return;
     if (global.db.data !== null) return;
     global.db.READ = true;
     await global.db.read().catch(console.error);
@@ -81,7 +72,7 @@ global.loadDatabase = async function loadDatabase() {
     };
     global.db.chain = chain(global.db.data);
 };
-loadDatabase();
+await loadDatabase();
 
 global.authFile = 'session';
 const { state, saveCreds } = await useMultiFileAuthState(global.authFile);
@@ -90,65 +81,32 @@ const msgRetryCounterCache = new NodeCache();
 const question = (t) => {
     process.stdout.write(t);
     return new Promise((resolve) => {
-        process.stdin.once('data', (data) => {
-            resolve(data.toString().trim());
-        });
+        process.stdin.once('data', (data) => resolve(data.toString().trim()));
     });
 };
 
 let opzione;
 if (!methodCodeQR && !methodCode && !fs.existsSync(`./${global.authFile}/creds.json`)) {
-    do {
-        const red1 = chalk.hex('#FF0000');     // Red
-        const red2 = chalk.hex('#C0392B');     // Strong Red
-        const white = chalk.hex('#FFFFFF');    
-        const grey = chalk.hex('#BDC3C7');
-
-        const a = red1('╭━━━━━━━━━━━━━• 𝟕𝟖𝟕 𝐂𝐎𝐑𝐄 •━━━━━━━━━━━━━');
-        const b = red1('╰━━━━━━━━━━━━━• 𝟕𝟖𝟕 𝐄𝐍𝐃 •━━━━━━━━━━━━━━━');
-        const linea = red2('   ─────────◈────────◈─────────◈─────────');
-        const sm = white.bold('   ⚡ SISTEMA DI AUTENTICAZIONE ⚡');
-
-        const qr = red1(' ⌬') + ' ' + chalk.bold.white('MODALITÀ [1]: Sincronizzazione QR');
-        const codice = red1(' ⌬') + ' ' + chalk.bold.white('MODALITÀ [2]: Link tramite Codice');
-
-        const istruzioni = [
-            red1(' ❯') + grey.italic(' Inizializzazione protocollo 787...'),
-            red1(' ❯') + grey.italic(' Scegli un metodo per collegare il bot.'),
-        ];
-        const prompt = red1.bold('\n⌬ 787-auth ➤ ');
-
-        opzione = await question(`\n${a}\n          ${sm}\n${linea}\n\n${qr}\n${codice}\n\n${linea}\n${istruzioni.join('\n')}\n\n${b}${prompt}`);
-    } while (opzione !== '1' && opzione !== '2');
+    console.clear();
+    console.log(chalk.red.bold('\n━━━ 787 SYSTEM AUTH ━━━'));
+    console.log(chalk.white(' [1] QR CODE\n [2] PAIRING CODE'));
+    opzione = await question(chalk.red.bold('\nSeleziona ➤ '));
 }
 
 const logger = pino({ level: 'silent' });
 global.store = makeInMemoryStore({ logger });
-
-const makeDecodeJid = (jidCache) => {
-    return (jid) => {
-        if (!jid) return jid;
-        if (/:\d+@/gi.test(jid)) return jidNormalizedUser(jid);
-        return jid;
-    };
-};
-
 const { version } = await fetchLatestBaileysVersion();
 
 const connectionOptions = {
     version,
     logger,
-    // FIX: Usiamo Ubuntu/Chrome per evitare il blocco del pairing code
     browser: ['Ubuntu', 'Chrome', '110.0.5481.178'],
     auth: {
         creds: state.creds,
         keys: makeCacheableSignalKeyStore(state.keys, logger),
     },
-    decodeJid: makeDecodeJid(new NodeCache()),
     printQRInTerminal: opzione === '1' || methodCodeQR,
     msgRetryCounterCache,
-    retryRequestDelayMs: 500,
-    maxMsgRetryCount: 5,
 };
 
 global.conn = makeWASocket(connectionOptions);
@@ -156,65 +114,39 @@ global.store.bind(global.conn.ev);
 
 if (!fs.existsSync(`./${global.authFile}/creds.json`)) {
     if (opzione === '2' || methodCode) {
-        opzione = '2';
-        if (!conn.authState.creds.registered) {
-            let addNumber;
-            if (phoneNumber) {
-                addNumber = phoneNumber.replace(/[^0-9]/g, '');
-            } else {
-                phoneNumber = await question(chalk.bgRed(chalk.white.bold(` Inserisci il numero WhatsApp (es. 39347...) \n ━━► `)));
-                addNumber = phoneNumber.replace(/\D/g, '');
-            }
-            setTimeout(async () => {
-                let codeBot = await conn.requestPairingCode(addNumber, '787BOT01');
-                codeBot = codeBot?.match(/.{1,4}/g)?.join("-") || codeBot;
-                console.log(chalk.bold.white(chalk.bgRed(' 🔑 CODICE PAIRING: ')), chalk.bold.red(codeBot));
-            }, 3000);
+        let addNumber = phoneNumber ? phoneNumber.replace(/[^0-9]/g, '') : '';
+        if (!addNumber) {
+            let input = await question(chalk.bgRed.white(' Inserisci il numero (39...) ') + ' ➤ ');
+            addNumber = input.replace(/\D/g, '');
         }
+        setTimeout(async () => {
+            let codeBot = await conn.requestPairingCode(addNumber, '787BOT01');
+            codeBot = codeBot?.match(/.{1,4}/g)?.join("-") || codeBot;
+            console.log(chalk.white.bgRed('\n 🔑 CODICE: ') + ' ' + chalk.bold.red(codeBot) + '\n');
+        }, 3000);
     }
 }
 
 async function connectionUpdate(update) {
-    const { connection, lastDisconnect, isNewLogin, qr } = update;
-    if (isNewLogin) conn.isInit = true;
-    
-    const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode;
-    
-    if (code && code !== DisconnectReason.loggedOut) {
-        await global.reloadHandler(true).catch(console.error);
-    }
-
-    if (qr && (opzione === '1' || methodCodeQR)) {
-        console.log(chalk.bold.red(`\n 🪐 SCANSIONA IL QR 787 - SCADE PRESTO 🪐`));
-    }
-
+    const { connection, lastDisconnect, qr } = update;
+    if (qr) console.log(chalk.yellow('QR Code generato.'));
     if (connection === 'open') {
-        global.connectionMessagesPrinted = {};
-        if (!global.isLogoPrinted) {
-            console.log(chalk.red.bold(`
- ███████╗ █████╗ ███████╗    ██████╗  ██████╗ ████████╗
- ╚════██║██╔══██╗╚════██║    ██╔══██╗██╔═══██╗╚══██╔══╝
-     ██╔╝╚██████║    ██╔╝     ██████╔╝██║   ██║   ██║   
-    ██╔╝  ╚═══██║   ██╔╝      ██╔══██╗██║   ██║   ██║   
-    ██║   █████╔╝   ██║       ██████╔╝╚██████╔╝   ██║   
-    ╚═╝   ╚════╝    ╚═╝       ╚═════╝  ╚═════╝    ╚═╝   
-            [ 787 CORE ONLINE - BY GIUSE ]
-            `));
-            global.isLogoPrinted = true;
-        }
+        console.clear();
+        console.log(chalk.red.bold('\n━━━ 787 BOT ONLINE ━━━\n'));
     }
-
     if (connection === 'close') {
-        const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode;
+        const reason = lastDisconnect?.error?.output?.statusCode;
         if (reason === DisconnectReason.loggedOut) {
-            console.log(chalk.bold.red(`\n⚠️ DISCONNESSO. ELIMINA LA SESSIONE E RIAVVIA ⚠️`));
-            if (fs.existsSync(global.authFile)) fs.rmSync(global.authFile, { recursive: true, force: true });
+            rmSync(global.authFile, { recursive: true, force: true });
             process.exit(1);
         } else {
-            await global.reloadHandler(true).catch(console.error);
+            process.exit(0);
         }
     }
 }
+
+conn.ev.on('connection.update', connectionUpdate);
+conn.ev.on('creds.update', saveCreds);
 
 let handler = await import('./handler.js');
 global.reloadHandler = async function (restatConn) {
@@ -222,21 +154,16 @@ global.reloadHandler = async function (restatConn) {
         const Handler = await import(`./handler.js?update=${Date.now()}`);
         if (Object.keys(Handler || {}).length) handler = Handler;
     } catch (e) { console.error(e); }
-    
     if (restatConn) {
         try { global.conn.ws.close(); } catch { }
         conn.ev.removeAllListeners();
         global.conn = makeWASocket(connectionOptions);
         global.store.bind(global.conn.ev);
+        conn.ev.on('connection.update', connectionUpdate);
+        conn.ev.on('creds.update', saveCreds);
     }
-
     conn.handler = handler.handler.bind(global.conn);
-    conn.connectionUpdate = connectionUpdate.bind(global.conn);
-    conn.credsUpdate = saveCreds;
-
     conn.ev.on('messages.upsert', conn.handler);
-    conn.ev.on('connection.update', conn.connectionUpdate);
-    conn.ev.on('creds.update', conn.credsUpdate);
     return true;
 };
 
@@ -252,31 +179,19 @@ async function filesInit() {
         } catch (e) { console.error(e); }
     }
 }
-filesInit().then(() => console.log(chalk.red('✦ 787 PLUGINS CARICATI ✦'))).catch(console.error);
-
-const pluginWatcher = watch(pluginFolder, async (_ev, filename) => {
-    if (pluginFilter(filename)) {
-        const dir = global.__filename(join(pluginFolder, filename), true);
-        try {
-            const module = await import(`${global.__filename(dir)}?update=${Date.now()}`);
-            global.plugins[filename] = module.default || module;
-            console.log(chalk.red(`✅ PLUGIN AGGIORNATO: ${filename}`));
-        } catch (e) { console.error(`⚠️ ERRORE PLUGIN: ${filename}`); }
-    }
-});
+filesInit().then(() => console.log(chalk.red('Plugins caricati.'))).catch(console.error);
 
 await global.reloadHandler();
 
-// Pulizia cartella temp ogni ora
+// Pulizia temp
 setInterval(() => {
-    const tmp = './temp';
-    if (existsSync(tmp)) {
-        readdirSync(tmp).forEach(file => {
-            try { unlinkSync(join(tmp, file)); } catch {}
+    if (existsSync('./temp')) {
+        readdirSync('./temp').forEach(file => {
+            try { unlinkSync(join('./temp', file)); } catch {}
         });
     }
 }, 3600000);
 
-const mainWatcher = watch(fileURLToPath(import.meta.url), () => {
-  console.log(chalk.bgRed(chalk.white.bold(" 787 Core: 'based.js' AGGIORNATO ")));
+watch(fileURLToPath(import.meta.url), () => {
+  console.log(chalk.bgRed(" 787 Core: AGGIORNATO "));
 });
