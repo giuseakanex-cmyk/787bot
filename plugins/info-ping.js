@@ -12,7 +12,7 @@ let handler = async (m, { conn, usedPrefix }) => {
     const ramBot = (process.memoryUsage().rss / 1024 / 1024).toFixed(2);
 
     const textMsg = `
-⌬ ━━━──  𝟕 𝟖 𝟕  𝐒 𝐘 𝐒 𝐓 𝐄 𝐌  ──━━━ ⌬
+ ━━━──  𝟕 𝟖 𝟕  𝐒 𝐘 𝐒 𝐓 𝐄 𝐌  ──━━━ 
 
 █ ⚡ **LATENZA** ↳ Protocollo: ${latenza} ms
 
@@ -22,18 +22,15 @@ let handler = async (m, { conn, usedPrefix }) => {
 █ 🧠 **RESOURCES**
 ↳ RAM: ${ramBot} MB
 
-█ 👑 **AUTHORITY**
-↳ Root: GIUSE
-
 ⌬ ━━━──  𝐒𝐘𝐒𝐓𝐄𝐌 𝐎𝐕𝐄𝐑𝐑𝐈𝐃𝐄  ──━━━ ⌬`.trim();
 
     await conn.sendMessage(m.chat, {
       text: textMsg,
-      footer: "✧ 𝐋 𝐄 𝐆 𝐀 𝐌  𝐎 𝐒 ✧",
+      footer: "✧ 𝟕 𝟖 𝟕 ✧",
       buttons: [
-        { buttonId: usedPrefix + "stats", buttonText: { displayText: "📊 𝐒𝐭𝐚𝐭𝐬" }, type: 1 },
-        { buttonId: usedPrefix + "menu", buttonText: { displayText: "✧𝐌𝐞𝐧𝐮✧" }, type: 1 },
-        { buttonId: usedPrefix + "ds", buttonText: { displayText: "🗑️ 𝐒𝐯𝐮𝐨𝐭𝐚 𝐒𝐞𝐬𝐬𝐢𝐨𝐧𝐢" }, type: 1 }
+        { buttonId: usedPrefix + "stats", buttonText: { displayText: "𝐒𝐭𝐚𝐭𝐬" }, type: 1 },
+        { buttonId: usedPrefix + "menu", buttonText: { displayText: "𝐌𝐞𝐧𝐮" }, type: 1 },
+        { buttonId: usedPrefix + "ds", buttonText: { displayText: "𝐒𝐯𝐮𝐨𝐭𝐚 𝐒𝐞𝐬𝐬𝐢𝐨𝐧𝐢" }, type: 1 }
       ],
       headerType: 1,
       contextInfo: {
