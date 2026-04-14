@@ -30,9 +30,9 @@ let handler = async (m, { conn, usedPrefix, command }) => {
         }
 
         let testoclassifica = `
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦
+
 · 🏆 𝐓𝐎𝐏 𝟏𝟎 𝐓𝐈𝐓𝐀𝐍𝐈 🏆 ·
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n\n`;
+                     \n\n`;
 
         let medaglie = ['🥇', '🥈', '🥉', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅'];
         let menzioni = [];
