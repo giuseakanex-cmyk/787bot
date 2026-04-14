@@ -3,8 +3,8 @@
 // LEGAM OS - VISUALIZZATORE ALBERO GENEALOGICO
 // ==========================================
 
-const legamHeader = `✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n· 🌳 𝐀𝐋𝐁𝐄𝐑𝐎 𝐆𝐄𝐍𝐄𝐀𝐋𝐎𝐆𝐈𝐂𝐎 🌳 ·\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`;
-const legamFooter = `✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`;
+const legamHeader = `----------------------------\n· 🌳7 ALBERO 8 GENEALOGICO 7🌳 ·\n----------------------------`;
+const legamFooter = `----------------------------`;
 
 let handler = async (m, { conn, text }) => {
     if (!m.isGroup) return;
@@ -21,7 +21,7 @@ let handler = async (m, { conn, text }) => {
     }
 
     if (!db[targetUser]) {
-        return m.reply("『 ❌ 』 Utente non registrato nel database.");
+        return m.reply("Utente non registrato nel database.❌ ");
     }
 
     // Assicuriamoci che i dati esistano
@@ -59,9 +59,9 @@ let handler = async (m, { conn, text }) => {
     let msg = `${legamHeader}\n\n`;
     msg += `👤 𝐃𝐢𝐧𝐚𝐬𝐭𝐢𝐚 𝐝𝐢: @${getNum(targetUser)}\n\n`;
     
-    msg += `『 💍 』 𝐏𝐚𝐫𝐭𝐧𝐞𝐫:\n➤ ${partnerStr}\n\n`;
-    msg += `『 👴🏼 』 𝐆𝐞𝐧𝐢𝐭𝐨𝐫𝐢:\n➤ ${genitoriStr}\n\n`;
-    msg += `『 🍼 』 𝐅𝐢𝐠𝐥𝐢: ${figliStr}\n\n`;
+    msg += `💍 𝐏𝐚𝐫𝐭𝐧𝐞𝐫:\n➤ ${partnerStr}\n\n`;
+    msg += `👴🏼 𝐆𝐞𝐧𝐢𝐭𝐨𝐫𝐢:\n➤ ${genitoriStr}\n\n`;
+    msg += `🍼 𝐅𝐢𝐠𝐥𝐢: ${figliStr}\n\n`;
     
     msg += `${legamFooter}`;
 
@@ -74,7 +74,7 @@ let handler = async (m, { conn, text }) => {
             forwardedNewsletterMessageInfo: { 
                 newsletterJid: '120363428220415117@newsletter', 
                 serverMessageId: 100, 
-                newsletterName: "✨ 𝐋𝐞𝐠𝐚𝐦 𝐎𝐒 𝐅𝐚𝐦𝐢𝐥𝐲 ✨" 
+                newsletterName: "𝟕 𝟖 𝟕" 
             }
         }
     }, { quoted: m });
