@@ -41,17 +41,13 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     // 🎭 MESSAGGIO GRAFICO
     // ==========================================
     let txtFurto = `
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦
-· 🏴‍☠️ 𝐅𝐔𝐑𝐓𝐎 𝐃𝐈 𝐒𝐓𝐀𝐓𝐎 🏴‍☠️ ·
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦
-
-Il conto di @${who.split('@')[0]} è stato **completamente prosciugato** per ordine dell'Owner.
+*FURTO AVVENUTO CON SUCCESSO* ✔
+Il conto di @${who.split('@')[0]} è stato *completamente prosciugato* per ordine dell'Owner.
 
 💰 *Bottino sequestrato:* ${formatNumber(bottino)} $
 📉 *Nuovo saldo vittima:* 0 $
-
-👑 _I fondi sono stati trasferiti nel tuo caveau._
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`.trim();
+I fondi sono stati trasferiti nel tuo caveau.
+`.trim();
 
     let contextFurto = {
         mentionedJid: [who, m.sender],
