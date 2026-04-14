@@ -14,12 +14,13 @@ let handler = async (m, { conn, usedPrefix }) => {
     const textMsg = `
  ━━━──  𝟕 𝟖 𝟕  𝐒 𝐘 𝐒 𝐓 𝐄 𝐌  ──━━━ 
 
-█ ⚡ **LATENZA** ↳ Protocollo: ${latenza} ms
+⚡ *LATENZA* 
+↳ Protocollo: ${latenza} ms
 
-█ ⏳ **RUNTIME**
+ ⏳ *RUNTIME*
 ↳ Attivo da: ${uptimeStr}
 
-█ 🧠 **RESOURCES**
+ 🧠 *RESOURCES*
 ↳ RAM: ${ramBot} MB
 
 ⌬ ━━━──  𝐒𝐘𝐒𝐓𝐄𝐌 𝐎𝐕𝐄𝐑𝐑𝐈𝐃𝐄  ──━━━ ⌬`.trim();
