@@ -2,7 +2,7 @@
 // 𝟕𝟖𝟕 𝐒𝐘𝐒𝐓𝐄𝐌 - 𝐃𝐈𝐍𝐀𝐒𝐓𝐈𝐀 𝐄 𝐀𝐔𝐓𝐎𝐑𝐈𝐓𝐀̀ 👨‍👩‍👧‍👦
 // ==========================================
 
-const sysHeader = `⌬ ━━━───  𝟕 𝟖 𝟕  𝐃 𝐈 𝐍 𝐀 𝐒 𝐓 𝐈 𝐀  ───━━━ ⌬`;
+const sysHeader = `⌬ ━━━───  𝟕 𝟖 𝟕  ───━━━ ⌬`;
 const sysFooter = `⌬ ━━━───  𝐒𝐘𝐒𝐓𝐄𝐌  𝐀𝐔𝐓𝐇  ───━━━ ⌬`;
 
 let handler = async (m, { conn, command, text, usedPrefix }) => {
