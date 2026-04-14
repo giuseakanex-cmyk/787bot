@@ -23,7 +23,7 @@ let handler = async (m, { conn, text, usedPrefix, command, args }) => {
 
         return await conn.sendMessage(m.chat, {
             text: menuText,
-            footer: '🎮 Minigames | 👑 Legam Bot',
+            footer: '🎮 Minigames | 👑 787 Bot',
             buttons: buttons
         }, { quoted: m });
     }
@@ -37,14 +37,14 @@ let handler = async (m, { conn, text, usedPrefix, command, args }) => {
 
         let askText = `🪙 *TESTA O CROCE*\n\nHai scelto di puntare: *${f(q)}€*\nScegli su cosa puntare:`;
         let buttons = [
-            { buttonId: `${usedPrefix}tc ${q} testa`, buttonText: { displayText: `↩️ 🪙 Testa (${f(q)}€)` }, type: 1 },
-            { buttonId: `${usedPrefix}tc ${q} croce`, buttonText: { displayText: `↩️ 💿 Croce (${f(q)}€)` }, type: 1 },
-            { buttonId: `${usedPrefix}tc menu`, buttonText: { displayText: `↩️ 💰 Cambia puntata` }, type: 1 }
+            { buttonId: `${usedPrefix}tc ${q} testa`, buttonText: { displayText: `🪙 Testa (${f(q)}€)` }, type: 1 },
+            { buttonId: `${usedPrefix}tc ${q} croce`, buttonText: { displayText: `💿 Croce (${f(q)}€)` }, type: 1 },
+            { buttonId: `${usedPrefix}tc menu`, buttonText: { displayText: `💰 Cambia puntata` }, type: 1 }
         ];
 
         return await conn.sendMessage(m.chat, {
             text: askText,
-            footer: '🎮 Minigames | 👑 Legam Bot',
+            footer: '🎮 Minigames | 👑 787 Bot',
             buttons: buttons
         }, { quoted: m });
     }
@@ -109,14 +109,14 @@ let handler = async (m, { conn, text, usedPrefix, command, args }) => {
 
     // Creazione dei bottoni di fine partita
     let finalButtons = [
-        { buttonId: `${usedPrefix}tc ${quantita} testa`, buttonText: { displayText: `↩️ 🪙 Testa (${f(quantita)}€)` }, type: 1 },
-        { buttonId: `${usedPrefix}tc ${quantita} croce`, buttonText: { displayText: `↩️ 💿 Croce (${f(quantita)}€)` }, type: 1 },
-        { buttonId: `${usedPrefix}tc menu`, buttonText: { displayText: `↩️ 💰 Cambia puntata` }, type: 1 }
+        { buttonId: `${usedPrefix}tc ${quantita} testa`, buttonText: { displayText: `🪙 Testa (${f(quantita)}€)` }, type: 1 },
+        { buttonId: `${usedPrefix}tc ${quantita} croce`, buttonText: { displayText: `💿 Croce (${f(quantita)}€)` }, type: 1 },
+        { buttonId: `${usedPrefix}tc menu`, buttonText: { displayText: `💰 Cambia puntata` }, type: 1 }
     ];
 
     await conn.sendMessage(m.chat, {
         text: resText,
-        footer: '🎮 Minigames | 👑 Legam Bot',
+        footer: '🎮 Minigames | 👑 787 Bot',
         buttons: finalButtons
     }, { quoted: m });
 }
