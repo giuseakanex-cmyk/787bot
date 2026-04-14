@@ -1,28 +1,23 @@
-// Plugin ottimizzato con Bottoni Interattivi e Stile Legam OS
+// Plugin // 𝟕𝟖𝟕 BOT //
 
 const playAgainButtons = () => [{
     name: 'quick_reply',
-    buttonParamsJson: JSON.stringify({ display_text: '🏳️ Gioca Ancora!', id: `.bandiera` })
+    buttonParamsJson: JSON.stringify({ display_text: '🏳️ Gioca Ancora', id: `.bandiera` })
 }];
 
-const legamContext = (title) => ({
+const botContext = (title) => ({
     isForwarded: true,
-    forwardingScore: 999,
+    forwardingScore: 1,
     forwardedNewsletterMessageInfo: {
         newsletterJid: '120363233544482011@newsletter',
         serverMessageId: 100,
-        newsletterName: `🌍 ${title}`
+        newsletterName: `𝟕𝟖𝟕 BOT | ${title}`
     }
 });
 
 function normalizeString(str) {
     if (!str) return '';
-    return str
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9\s]/g, '')
-        .trim();
+    return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, '').trim();
 }
 
 function calculateSimilarity(str1, str2) {
@@ -36,67 +31,32 @@ function calculateSimilarity(str1, str2) {
 function isAnswerCorrect(userAnswer, correctAnswer) {
     if (userAnswer.length < 2) return false;
     const similarityScore = calculateSimilarity(userAnswer, correctAnswer);
-    return (
-        userAnswer === correctAnswer ||
-        (correctAnswer.includes(userAnswer) && userAnswer.length > correctAnswer.length * 0.5) ||
-        (userAnswer.includes(correctAnswer) && userAnswer.length < correctAnswer.length * 1.5) ||
-        similarityScore >= 0.8
-    );
+    return (userAnswer === correctAnswer || (correctAnswer.includes(userAnswer) && userAnswer.length > correctAnswer.length * 0.5) || (userAnswer.includes(correctAnswer) && userAnswer.length < correctAnswer.length * 1.5) || similarityScore >= 0.8);
 }
 
 let handler = async (m, { conn, args, participants, isAdmin, isBotAdmin, usedPrefix, command }) => {
     let cmd = command.toLowerCase();
+    const sep = '----------------------------';
 
-    // ==========================================
-    // 🛑 COMANDO SKIP (SOLO ADMIN)
-    // ==========================================
     if (cmd === 'skipbandiera') {
-        if (!m.isGroup) return m.reply('『 ⚠️ 』 `Questo comando funziona solo nei gruppi!`');
-        if (!global.bandieraGame?.[m.chat]) return m.reply('『 ⚠️ 』 `Non c\'è nessuna partita attiva!`');
-        if (!isAdmin && !m.fromMe) return m.reply('『 ❌ 』 `Comando riservato agli Admin.`');
+        if (!m.isGroup) return m.reply('// 𝟕𝟖𝟕 BOT //\n\nSolo nei gruppi.');
+        if (!global.bandieraGame?.[m.chat]) return m.reply('// 𝟕𝟖𝟕 BOT //\n\nNessuna partita attiva.');
+        if (!isAdmin && !m.fromMe) return m.reply('// 𝟕𝟖𝟕 BOT //\n\nSolo per Admin.');
 
         clearTimeout(global.bandieraGame[m.chat].timeout);
-        
-        let skipText = `
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦
-· 🛑 𝐆𝐈𝐎𝐂𝐎 𝐀𝐍𝐍𝐔𝐋𝐋𝐀𝐓𝐎 🛑 ·
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦
+        let skipText = `// 𝟕𝟖𝟕 BOT // GIOCO ANNULLATO //\n\n🏳️ La nazione era: ${global.bandieraGame[m.chat].rispostaOriginale}\n🛑 Interrotto da un Admin\n\n${sep}`;
 
-『 🏳️ 』 \`La nazione era:\` *${global.bandieraGame[m.chat].rispostaOriginale}*
-『 👑 』 _Interrotto da un Admin_
-
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`.trim();
-
-        await conn.sendMessage(m.chat, {
-            text: skipText,
-            footer: '✨ 𝐋𝐞𝐠𝐚𝐦 𝐎𝐒 ✨',
-            interactiveButtons: playAgainButtons()
-        }, { quoted: m });
-        
+        await conn.sendMessage(m.chat, { text: skipText, interactiveButtons: playAgainButtons() }, { quoted: m });
         delete global.bandieraGame[m.chat];
         return;
     }
     
-    // ==========================================
-    // 🌍 AVVIO DEL GIOCO
-    // ==========================================
-    if (global.bandieraGame?.[m.chat]) {
-        return m.reply('『 ⏳ 』 `C\'è già una partita attiva in questo gruppo!`');
-    }
+    if (global.bandieraGame?.[m.chat]) return m.reply('// 𝟕𝟖𝟕 BOT //\n\nPartita già in corso.');
 
-    // Cooldown per non spammare
     const cooldownKey = `bandiera_${m.chat}`;
-    const lastGame = global.cooldowns?.[cooldownKey] || 0;
     const now = Date.now();
-    const cooldownTime = 5000;
-
-    if (now - lastGame < cooldownTime) {
-        const remainingTime = Math.ceil((cooldownTime - (now - lastGame)) / 1000);
-        return m.reply(`『 ⏳ 』 \`Attendi ${remainingTime} secondi prima di un nuovo gioco.\``);
-    }
-
-    global.cooldowns = global.cooldowns || {};
-    global.cooldowns[cooldownKey] = now;
+    if (now - (global.cooldowns?.[cooldownKey] || 0) < 5000) return m.reply('// 𝟕𝟖𝟕 BOT //\n\nAttendi 5 secondi.');
+    global.cooldowns = { ...global.cooldowns, [cooldownKey]: now };
 
     let bandiere = [
         { url: 'https://flagcdn.com/w320/it.png', nome: 'Italia' }, { url: 'https://flagcdn.com/w320/fr.png', nome: 'Francia' },
@@ -131,177 +91,62 @@ let handler = async (m, { conn, args, participants, isAdmin, isBotAdmin, usedPre
     let scelta = bandiere[Math.floor(Math.random() * bandiere.length)];
 
     try {
-        let startCaption = `
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦
-· 🌍 𝐆𝐄𝐎 𝐐𝐔𝐈𝐙 🌍 ·
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦
-
-『 🏳️ 』 Di che nazione è questa bandiera?
-『 ⏱️ 』 Hai *30 secondi* e *3 tentativi*!
-
-👉 *Rispondi a questo messaggio con il nome.*
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`.trim();
-
-        let msg = await conn.sendMessage(m.chat, {
-            image: { url: scelta.url },
-            caption: startCaption,
-            contextInfo: legamContext('Geo Quiz')
-        }, { quoted: m });
+        let startCaption = `// 𝟕𝟖𝟕 BOT // GEO QUIZ //\n\n🏳️ Di che nazione è questa bandiera?\n⏱️ Tempo: 30s | Tentativi: 3\n\n👉 Rispondi a questo messaggio.\n\n${sep}`;
+        let msg = await conn.sendMessage(m.chat, { image: { url: scelta.url }, caption: startCaption, contextInfo: botContext('Geo Quiz') }, { quoted: m });
         
-        global.bandieraGame = global.bandieraGame || {};
-        global.bandieraGame[m.chat] = {
+        global.bandieraGame = { ...global.bandieraGame, [m.chat]: {
             id: msg.key.id,
             risposta: scelta.nome.toLowerCase(),
             rispostaOriginale: scelta.nome,
             tentativi: {},
-            suggerito: false,
             startTime: Date.now(),
             timeout: setTimeout(async () => {
                 if (global.bandieraGame?.[m.chat]) {
-                    let timeoutText = `
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦
-· ⌛ 𝐓𝐄𝐌𝐏𝐎 𝐒𝐂𝐀𝐃𝐔𝐓𝐎 ⌛ ·
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦
-
-『 🏳️ 』 \`La nazione era:\` *${scelta.nome}*
-『 💡 』 Clicca il bottone per riprovare!
-
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`.trim();
-                    
-                    await conn.sendMessage(m.chat, { 
-                        text: timeoutText, 
-                        footer: '✨ 𝐋𝐞𝐠𝐚𝐦 𝐎𝐒 ✨',
-                        interactiveButtons: playAgainButtons() 
-                    }, { quoted: msg });
-                    
+                    let timeoutText = `// 𝟕𝟖𝟕 BOT // TEMPO SCADUTO //\n\n🏳️ La nazione era: ${scelta.nome}\n💡 Clicca sotto per riprovare.\n\n${sep}`;
+                    await conn.sendMessage(m.chat, { text: timeoutText, interactiveButtons: playAgainButtons() }, { quoted: msg });
                     delete global.bandieraGame[m.chat];
                 }
             }, 30000)
-        };
-    } catch (error) {
-        console.error('Errore nel gioco bandiere:', error);
-        m.reply('『 ❌ 』 `Errore durante il caricamento dell\'immagine. Riprova.`');
-    }
+        }};
+    } catch (e) { m.reply('// 𝟕𝟖𝟕 BOT //\n\nErrore caricamento immagine.'); }
 };
 
-// ==========================================
-// 🎯 MOTORE DI CONTROLLO RISPOSTE & BOTTONI
-// ==========================================
-handler.before = async (m, { conn, usedPrefix, command }) => {
+handler.before = async (m, { conn, usedPrefix }) => {
     const chat = m.chat;
+    const game = global.bandieraGame?.[chat];
+    const sep = '----------------------------';
     
-    // 1. GESTIONE DEL CLICK SUL BOTTONE (Gioca Ancora)
-    if (m.message && m.message.interactiveResponseMessage) {
-        const response = m.message.interactiveResponseMessage;
-        
-        if (response.nativeFlowResponseMessage?.paramsJson) {
-            try {
-                const params = JSON.parse(response.nativeFlowResponseMessage.paramsJson);
-                if (params.id === '.bandiera') {
-                    if (!global.bandieraGame?.[chat]) {
-                        // Finge che l'utente abbia scritto il comando per far ripartire il gioco
-                        const fakeMessage = {
-                            ...m,
-                            text: usedPrefix + 'bandiera',
-                            body: usedPrefix + 'bandiera'
-                        };
-                        try {
-                            await handler(fakeMessage, { conn, usedPrefix, command: 'bandiera' });
-                        } catch (error) {
-                            console.error('Errore nel riavvio del gioco dai bottoni:', error);
-                        }
-                    } else {
-                        conn.reply(chat, '『 ⏳ 』 `C\'è già una partita attiva!`', m);
-                    }
-                }
-            } catch (error) {
-                console.error('Errore nel parsing dei parametri del bottone:', error);
-            }
+    if (m.message?.interactiveResponseMessage) {
+        const params = JSON.parse(m.message.interactiveResponseMessage.nativeFlowResponseMessage?.paramsJson || '{}');
+        if (params.id === '.bandiera' && !game) {
+            await handler(m, { conn, usedPrefix, command: 'bandiera' });
         }
         return;
     }
 
-    const game = global.bandieraGame?.[chat];
-    
-    // Controlla se l'utente sta rispondendo al messaggio del gioco
     if (!game || !m.quoted || m.quoted.id !== game.id || m.key.fromMe) return;
 
     const userAnswer = normalizeString(m.text || '');
     const correctAnswer = normalizeString(game.risposta);
-
     if (!userAnswer || userAnswer.length < 2) return;
 
-    const similarityScore = calculateSimilarity(userAnswer, correctAnswer);
-
-    // ==========================================
-    // ✅ RISPOSTA CORRETTA
-    // ==========================================
     if (isAnswerCorrect(userAnswer, correctAnswer)) {
         clearTimeout(game.timeout);
-
-        const timeTaken = Math.round((Date.now() - game.startTime) / 1000);
-        let reward = Math.floor(Math.random() * 31) + 20; // Tra 20 e 50 euro
+        let reward = Math.floor(Math.random() * 31) + 20;
         let exp = 150;
-
-        const timeBonus = timeTaken <= 10 ? 20 : timeTaken <= 20 ? 10 : 0;
-        reward += timeBonus;
-
-        // Inserimento sicuro nel Database
-        let user = global.db.data.users[m.sender];
-        if (!user) { global.db.data.users[m.sender] = {}; user = global.db.data.users[m.sender]; }
+        let user = global.db.data.users[m.sender] || (global.db.data.users[m.sender] = {});
         user.euro = (user.euro || 0) + reward;
         user.exp = (user.exp || 0) + exp;
 
-        let congratsMessage = `
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦
-· 🏆 𝐑𝐈𝐒𝐏𝐎𝐒𝐓𝐀 𝐄𝐒𝐀𝐓𝐓𝐀 🏆 ·
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦
-
-👤 @${m.sender.split('@')[0]} ha indovinato!
-『 🏳️ 』 \`Nazione:\` *${game.rispostaOriginale}*
-『 ⏱️ 』 \`Tempo:\` *${timeTaken}s*
-
-🎁 *𝐑𝐢𝐜𝐨𝐦𝐩𝐞𝐧𝐬𝐞:*
-💰 +${reward} Euro ${timeBonus > 0 ? `(Bonus Velocità)` : ''}
-🆙 +${exp} EXP
-
-✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`.trim();
-        
-        await conn.sendMessage(chat, { 
-            text: congratsMessage, 
-            mentions: [m.sender], 
-            footer: '✨ 𝐋𝐞𝐠𝐚𝐦 𝐎𝐒 ✨',
-            interactiveButtons: playAgainButtons() 
-        }, { quoted: m });
-        
+        let winMsg = `// 𝟕𝟖𝟕 BOT // RISPOSTA ESATTA //\n\n👤 @${m.sender.split('@')[0]} ha indovinato!\n🏳️ Nazione: ${game.rispostaOriginale}\n⏱️ Tempo: ${Math.round((Date.now() - game.startTime)/1000)}s\n\n🎁 PREMI:\n💰 +${reward} Euro\n🆙 +${exp} EXP\n\n${sep}`;
+        await conn.sendMessage(chat, { text: winMsg, mentions: [m.sender], interactiveButtons: playAgainButtons() }, { quoted: m });
         delete global.bandieraGame[chat];
-        
-    } 
-    // ==========================================
-    // 👀 QUASI CORRETTO (Errori di battitura)
-    // ==========================================
-    else if (similarityScore >= 0.6 && !game.suggerito) {
-        game.suggerito = true;
-        await conn.reply(chat, '『 👀 』 `Ci sei quasi! Rileggi come lo hai scritto.`', m);
-        
-    } 
-    // ==========================================
-    // ❌ RISPOSTA ERRATA E TENTATIVI
-    // ==========================================
-    else {
-        if (!game.tentativi[m.sender]) game.tentativi[m.sender] = 0;
-        game.tentativi[m.sender] += 1;
-        const tentativiRimasti = 3 - game.tentativi[m.sender];
-
-        if (tentativiRimasti <= 0) {
-            await conn.reply(chat, '『 ❌ 』 `Hai esaurito i tuoi 3 tentativi personali! Lascia provare gli altri.`', m);
-        } else if (tentativiRimasti === 1) {
-            const primaLettera = game.rispostaOriginale[0].toUpperCase();
-            const numeroLettere = game.rispostaOriginale.length;
-            await conn.reply(chat, `『 ❌ 』 \`Sbagliato!\`\n\n💡 *Aiuto:* Inizia con la *${primaLettera}* ed è lunga *${numeroLettere}* lettere.`, m);
-        } else {
-            await conn.reply(chat, `『 ❌ 』 \`Sbagliato!\` (Tentativi rimasti: ${tentativiRimasti})`, m);
-        }
+    } else {
+        game.tentativi[m.sender] = (game.tentativi[m.sender] || 0) + 1;
+        let rimasti = 3 - game.tentativi[m.sender];
+        if (rimasti <= 0) return m.reply('// 𝟕𝟖𝟕 BOT //\n\n❌ Tentativi esauriti.');
+        if (rimasti === 1) return m.reply(`// 𝟕𝟖𝟕 BOT //\n\n💡 Aiuto: Inizia con ${game.rispostaOriginale[0]} ed è lunga ${game.rispostaOriginale.length} lettere.`);
+        m.reply(`// 𝟕𝟖𝟕 BOT //\n\n❌ Sbagliato! Rimasti: ${rimasti}`);
     }
 };
 
@@ -311,5 +156,3 @@ handler.command = /^(bandiera|skipbandiera)$/i;
 handler.group = true;
 
 export default handler;
-
-
