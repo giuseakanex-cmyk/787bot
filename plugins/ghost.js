@@ -10,8 +10,8 @@ let handler = async (m, { conn, command, isOwner, usedPrefix }) => {
         let txt = `
 ⌬ ━━━──  𝐆 𝐇 𝐎 𝐒 𝐓   𝐌 𝐎 𝐃 𝐄  ──━━━ ⌬
 
-█ ⚡ **STATUS** ↳ PROTOCOLLO SILENT: ATTIVO 🌙
-█ 🛠️ **EFFETTO** ↳ Il sistema ignora ogni input non autorizzato.
+⚡ *STATUS* NON DISTURBARE: ATTIVO 🌙
+🛠️ *EFFETTO* Il sistema ignora ogni input non autorizzato.
 
 ↳ Root Access: GIUSE (UNLOCKED)
 ↳ User Access: DENIED
@@ -30,8 +30,8 @@ let handler = async (m, { conn, command, isOwner, usedPrefix }) => {
         let txt = `
 ⌬ ━━━──  𝐎 𝐍 𝐋 𝐈 𝐍 𝐄   𝐌 𝐎 𝐃 𝐄  ──━━━ ⌬
 
-█ ⚡ **STATUS** ↳ PROTOCOLLO CORE: ATTIVO ☀️
-█ 🛠️ **EFFETTO** ↳ Accesso globale ripristinato.
+⚡ *STATUS* CORE: ATTIVO ☀️
+🛠️ *EFFETTO* Accesso globale ripristinato.
 
 ↳ Root Access: GIUSE
 ↳ User Access: GRANTED
