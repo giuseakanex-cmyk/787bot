@@ -1,15 +1,11 @@
 export async function before(m, { conn }) {
-  // 1. Se non è un messaggio di sistema (StubType) o non è in un gruppo, fermati
   if (!m.messageStubType || !m.isGroup) return;
 
-  // 2. Controllo se il rilevamento è attivo nel gruppo
   let chat = global.db.data.chats[m.chat] || {};
   if (!chat.rileva) return;
 
-  // 3. SCUDO ANTI-CRASH: Recupero sicuro dei dati del gruppo
   let groupMetadata = global.groupCache?.get(m.chat) || await conn.groupMetadata(m.chat).catch(() => null) || {};
 
-  // 4. Risoluzione dei numeri di telefono (evitando crash sui Lid)
   let sender = m.sender;
   if (sender && typeof sender === 'string' && sender.endsWith('@lid')) {
       const lidNumber = sender.split('@')[0].replace(/:\d+$/, '');
@@ -32,47 +28,47 @@ export async function before(m, { conn }) {
 
   const type = m.messageStubType;
 
-  // Nomi per la testata del Canale Inoltrato
   const actionNames = {
-    21: 'Nome Modificato',
-    22: 'Foto Modificata',
-    23: 'Link Reimpostato',
-    25: 'Permessi Modificati',
-    26: 'Stato Chat Modificato',
-    29: 'Promozione Admin',
-    30: 'Rimozione Admin',
-    72: 'Descrizione Modificata'
+    21: 'NOME GRUPPO',
+    22: 'FOTO GRUPPO',
+    23: 'LINK RESET',
+    25: 'PERMESSI INFO',
+    26: 'CHIUSURA CHAT',
+    29: 'PROMOZIONE',
+    30: 'RETROCESSIONE',
+    72: 'DESCRIZIONE'
   };
 
-  if (!actionNames[type]) return; // Se l'evento non è in lista, ignoriamo silenziosamente
+  if (!actionNames[type]) return;
 
   let textMsg = '';
+  const head = '// 𝟕 𝟖 𝟕  //';
+  const sep = '--------------------';
   
-  // 5. TESTI VIP LEGAM OS (Senza bug e senza crash)
   switch(type) {
     case 21:
-        textMsg = `✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n· 📝 𝐍𝐎𝐌𝐄 𝐌𝐎𝐃𝐈𝐅𝐈𝐂𝐀𝐓𝐎 📝 ·\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n\n『 👤 』 𝐀𝐳𝐢𝐨𝐧𝐞 𝐝𝐢: @${senderNumber}\n『 🏷️ 』 𝐍𝐮𝐨𝐯𝐨 𝐧𝐨𝐦𝐞: *${m.messageStubParameters[0]}*\n\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`;
+        textMsg = `${head}\n// ${actionNames[type]} //\n\nAutore: @${senderNumber}\nNuovo: ${m.messageStubParameters[0]}\n\n${sep}`;
         break;
     case 22:
-        textMsg = `✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n· 📸 𝐅𝐎𝐓𝐎 𝐌𝐎𝐃𝐈𝐅𝐈𝐂𝐀𝐓𝐀 📸 ·\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n\n『 👤 』 𝐀𝐳𝐢𝐨𝐧𝐞 𝐝𝐢: @${senderNumber}\n『 🖼️ 』 _L'immagine del gruppo è stata aggiornata._\n\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`;
+        textMsg = `${head}\n// ${actionNames[type]} //\n\nAutore: @${senderNumber}\nStato: Immagine aggiornata\n\n${sep}`;
         break;
     case 23:
-        textMsg = `✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n· 🔗 𝐋𝐈𝐍𝐊 𝐑𝐄𝐒𝐄𝐓𝐓𝐀𝐓𝐎 🔗 ·\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n\n『 👤 』 𝐀𝐳𝐢𝐨𝐧𝐞 𝐝𝐢: @${senderNumber}\n『 ⚠️ 』 _Il link d'invito precedente è stato revocato._\n\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`;
+        textMsg = `${head}\n// ${actionNames[type]} //\n\nAutore: @${senderNumber}\nStato: Link revocato\n\n${sep}`;
         break;
     case 25:
-        textMsg = `✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n· ⚙️ 𝐈𝐌𝐏𝐎𝐒𝐓𝐀𝐙𝐈𝐎𝐍𝐈 ⚙️ ·\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n\n『 👤 』 𝐀𝐳𝐢𝐨𝐧𝐞 𝐝𝐢: @${senderNumber}\n『 🔒 』 𝐏𝐞𝐫𝐦𝐞𝐬𝐬𝐢: *${m.messageStubParameters[0] === 'on' ? 'Solo Admin' : 'Tutti'}* possono modificare le info.\n\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`;
+        textMsg = `${head}\n// ${actionNames[type]} //\n\nAutore: @${senderNumber}\nModifica: ${m.messageStubParameters[0] === 'on' ? 'Solo Admin' : 'Tutti'}\n\n${sep}`;
         break;
     case 26:
-        textMsg = `✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n· 🚪 𝐒𝐓𝐀𝐓𝐎 𝐂𝐇𝐀𝐓 🚪 ·\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n\n『 👤 』 𝐀𝐳𝐢𝐨𝐧𝐞 𝐝𝐢: @${senderNumber}\n『 💬 』 𝐌𝐞𝐬𝐬𝐚𝐠𝐠𝐢: *${m.messageStubParameters[0] === 'on' ? 'Solo Admin' : 'Tutti'}* possono scrivere.\n\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`;
+        textMsg = `${head}\n// ${actionNames[type]} //\n\nAutore: @${senderNumber}\nScrittura: ${m.messageStubParameters[0] === 'on' ? 'Solo Admin' : 'Tutti'}\n\n${sep}`;
         break;
     case 29:
-        textMsg = `✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n· 🛡️ 𝐏𝐑𝐎𝐌𝐎𝐙𝐈𝐎𝐍𝐄 🛡️ ·\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n\n『 👑 』 𝐔𝐭𝐞𝐧𝐭𝐞: @${param0Number}\n『 🌟 』 𝐒𝐭𝐚𝐭𝐨: _E' stato nominato Amministratore!_\n\n👑 _Azione di: @${senderNumber}_\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`;
+        textMsg = `${head}\n// ${actionNames[type]} //\n\nUtente: @${param0Number}\nAdmin: @${senderNumber}\nStato: Promosso ad admin\n\n${sep}`;
         break;
     case 30:
-        textMsg = `✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n· 🔻 𝐑𝐄𝐓𝐑𝐎𝐂𝐄𝐒𝐒𝐈𝐎𝐍𝐄 🔻 ·\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n\n『 👤 』 𝐔𝐭𝐞𝐧𝐭𝐞: @${param0Number}\n『 ❌ 』 𝐒𝐭𝐚𝐭𝐨: _Non è più un Amministratore._\n\n👑 _Azione di: @${senderNumber}_\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`;
+        textMsg = `${head}\n// ${actionNames[type]} //\n\nUtente: @${param0Number}\nAdmin: @${senderNumber}\nStato: Rimosso admin\n\n${sep}`;
         break;
     case 72:
-        textMsg = `✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n· 📜 𝐃𝐄𝐒𝐂𝐑𝐈𝐙𝐈𝐎𝐍𝐄 𝐌𝐎𝐃𝐈𝐅𝐈𝐂𝐀𝐓𝐀 📜 ·\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦\n\n『 👤 』 𝐀𝐳𝐢𝐨𝐧𝐞 𝐝𝐢: @${senderNumber}\n『 ℹ️ 』 _La descrizione del gruppo è cambiata._\n\n✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦ ⁺ . ⁺ ✦`;
+        textMsg = `${head}\n// ${actionNames[type]} //\n\nAutore: @${senderNumber}\nStato: Testo modificato\n\n${sep}`;
         break;
   }
 
@@ -82,23 +78,19 @@ export async function before(m, { conn }) {
   if (decodedSender && decodedSender !== 's.whatsapp.net') mentions.push(decodedSender);
   if (decodedParam0 && decodedParam0 !== 's.whatsapp.net') mentions.push(decodedParam0);
 
-  // 6. MOTORE GRAFICO CANALE INOLTRATO VIP
   const legamContext = {
       mentionedJid: mentions,
       isForwarded: true,
-      forwardingScore: 999,
+      forwardingScore: 1,
       forwardedNewsletterMessageInfo: {
           newsletterJid: '120363259442839354@newsletter',
           serverMessageId: 100,
-          newsletterName: `⚙️ ${actionNames[type]}`
+          newsletterName: `787 BOT | ${actionNames[type]}`
       }
   };
 
-  // 7. INVIO INFALLIBILE
   await conn.sendMessage(m.chat, {
       text: textMsg,
       contextInfo: legamContext
   }).catch(()=>{});
 }
-
-
